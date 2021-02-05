@@ -1,0 +1,290 @@
+ \documentclass[a4paper]{D:/repositories/MyDGP/latex/PaperReadingLog}
+\usepackage{caption}
+\usepackage{overpic}
+\usepackage{float}
+
+\usepackage{enumitem} 
+\usepackage{amsfonts,amssymb,amsmath}
+\usepackage[linesnumbered,ruled,lined]{algorithm2e}%%伪代码
+\usepackage{multicol}
+\usepackage{wrapfig}
+\setmainfont{Arial}
+
+\begin{document}
+
+\PaperInfo
+{基于线搜索的最优化算法}
+{朱}
+{天宇}
+{}
+最优化方法从分类级别从高到低的顺序来说，可以分为几层：
+
+基于迭代下降的方法-基于线搜索的方法-基于梯度的方法-具体的各种方法
+
+本节内容主要介绍基于线搜索的方法。
+
+\section{Prototype}
+需要准备\key{\textbf{初始点}}，\key{\textbf{搜索方向}}，\key{\textbf{步长}}
+\begin{figure}[H]%使用H表示Here，不对图片排版！
+    \centering
+    \begin{overpic}[width=0.99\linewidth]{fig/1.1.png}
+    \end{overpic}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+
+\section{基于梯度的方法}
+基于梯度的方法的重点是\textbf{如何构造搜索方向}。其使用\textbf{负梯度方向}来构造搜索方向$\mathrm{d}^{(k)}$。主要步骤有3步：
+\begin{enumerate}
+    \item 初始化，选择一个合适的起点$\mathrm{x}^{(0)}\in\mathbb{R}^n$，$k\leftarrow 0$
+    \item 搜索方向$\mathrm{d}^{(k)}\leftarrow -\key{\mathrm{H}_k}\nabla f(\mathrm{x}^{(k)})$，其中$\mathrm{H}_k$是一个正定、对称矩阵
+    \item 确定步长因子，这通过解一个一维的最优化问题$\min_{\alpha\ge 0}f(\mathrm{x}^{(k)}+\alpha \mathrm{d}^{(k)})$来获得。
+    \item 更新：$k\leftarrow k+1, \mathrm{x}^{(k+1)}\leftarrow \mathrm{x}^{(k)}+\alpha_k\mathrm{d}^{(k)}$
+\end{enumerate}
+
+\subsection{$\mathrm{H}_k$是单位阵，最速下降法}
+此时$\mathrm{d^{(k)}}=-\nabla f(\mathrm{x}^{(k)})$。对于无约束的最优化问题$\min_{\mathrm{x}\in \mathrm{R}^n}$，泰勒展开有：
+$$
+f(\mathrm{x})=f(\mathrm{x}^{(k)})+\nabla f(\mathrm{x}^{(k)})^\top(\mathrm{x}-\mathrm{x}^{(k)})+O(\lVert \mathrm{x}-\mathrm{x}^{(k)} \lVert ^2)
+$$
+当$\mathrm{d^{(k)}}=-\nabla f(\mathrm{x}^{(k)})$的时候，总是存在一个足够小的$\alpha_k$，使得
+$$
+f(\mathrm{x}^{(k)}+\alpha_k\mathrm{d}^{(k)})<f(\mathrm{x}^{(k)})
+$$
+这通过将$f(\mathrm{x}^{(k)}+\alpha_k\mathrm{d}^{(k)})$进行泰勒展开后就可以验证。
+
+虽然$\mathrm{H}_k$为单位阵的时候，搜索方向是函数下降最快的方向，但这并不意味着这么做结果能达到最好。
+
+
+\subsection{$\mathrm{H}_k=(\nabla^2f(\mathrm{x}^{(k)}))^{-1}$是Hessian矩阵的逆矩阵}
+这里\textbf{要求Hessian矩阵是正定的}，也就是每个特征值都大于0。同样，将$f(\mathrm{x}^{(k)}+\alpha_k\mathrm{d}^{(k)})$在$\mathrm{x}^k$处进行二阶的泰勒展开：
+$$
+\begin{aligned}
+    f(\mathrm{x}^{(k)}+\alpha_k\mathrm{d}^{(k)})&=f(\mathrm{x}^{(k)})+\nabla f(\mathrm{x}^{(k)})^\top(\mathrm{x}^{(k)}+\alpha_k\mathrm{d}^{(k)}-\mathrm{x}^{(k)})\\
+    &+\frac{1}{2}(\mathrm{x}^{(k)}+\alpha_k\mathrm{d}^{(k)}-\mathrm{x}^{(k)})^\top\nabla^2 f(\mathrm{x}^{(k)})(\mathrm{x}^{(k)}+\alpha_k\mathrm{d}^{(k)}-\mathrm{x}^{(k)})\\
+    &+O(\lVert (\mathrm{x}^{(k)}+\alpha_k\mathrm{d}^{(k)}-\mathrm{x}^{(k)}) \lVert ^3)\\
+    &= f(\mathrm{x}^{(k)})+\nabla f(\mathrm{x}^{(k)})^\top(\alpha_k\mathrm{d}^{(k)})\\
+    &+\frac{1}{2}(\alpha_k\mathrm{d}^{(k)})^\top\nabla^2 f(\mathrm{x}^{(k)})(\alpha_k\mathrm{d}^{(k)})\\
+    &+O(\lVert (\alpha_k\mathrm{d}^{(k)}) \lVert ^3)\\
+    &= f(\mathrm{x}^{(k)})+\alpha_k\nabla f(\mathrm{x}^{(k)})^\top\key{\mathrm{d}^{(k)}}\\
+    &+\frac{1}{2}\alpha_k^2\key{\mathrm{d}^{(k)\top}}\nabla^2 f(\mathrm{x}^{(k)})\key{\mathrm{d}^{(k)}}\\
+    &+O(\lVert (\alpha_k\mathrm{d}^{(k)}) \lVert ^3)\\
+\end{aligned}
+$$
+在这个式子中，一阶展开为
+$$
+\begin{aligned}
+    \alpha_k\nabla f(\mathrm{x}^{(k)})^\top\key{\mathrm{d}^{(k)}}&=\key{-}\alpha_k\nabla f(\mathrm{x}^{(k)})^\top\key{(\nabla^2f(\mathrm{x}^{(k)}))^{-1}}\nabla f(\mathrm{x}^{(k)})\\
+    &=\key{-}\alpha_k\nabla f(\mathrm{x}^{(k)})^\top G_k^{-1}\nabla f(\mathrm{x}^{(k)})
+\end{aligned}
+$$
+这是一个\textbf{二次型}，中间的Hessian矩阵的逆矩阵也是正定的。所以此项的值为负。
+
+对于二阶展开
+$$
+\begin{aligned}
+    \frac{1}{2}\alpha_k^2\key{\mathrm{d}^{(k)\top}}\nabla^2 f(\mathrm{x}^{(k)})\key{\mathrm{d}^{(k)}}&=\frac{1}{2}\alpha_k^2\nabla f(\mathrm{x}^{(k)})^\top (G_k^{-1})^\top G_k G_k^{-1} \nabla f(\mathrm{x}^{(k)})\\
+    &=\frac{1}{2}\alpha_k^2\nabla f(\mathrm{x}^{(k)})^\top (G_k^{-1})^\top \nabla f(\mathrm{x}^{(k)})
+\end{aligned}
+$$
+这也是一个二次型，且由于Hessian矩阵是正定对称的，所以$(G_k^{-1})^\top=G_k^{-1}$，所以第二项的中间的矩阵和第一项的中间的矩阵是一样的。而由于$\alpha_k$是一个很小的正数，所以$\frac{1}{2}\alpha_k^2-\alpha_k<0$，所以一阶项与二阶项的和是小于0的。
+
+因此同样有
+$$
+f(\mathrm{x}^{(k)}+\alpha_k\mathrm{d}^{(k)})<f(\mathrm{x}^{(k)})
+$$
+
+实际上，$d^k$是函数在$x^k$点处二次展开的极小点。
+
+\subsection{确定步长因子$\alpha$}
+一般来说，$\alpha$肯定是要尽可能的大，这样下降就会比较快。但如果$\alpha$太大，可能根本无法保证下降。因此要通过优化以下这个一维问题来确定最大步长。
+$$
+\min_{\alpha\ge 0}\varphi(\alpha)=f(\mathrm{x}^{(k)}+\alpha\mathrm{d}^{(k)})
+$$
+
+如果以这个方程的最优解作为步长，此时就称为"\textbf{精确的一维搜索}"。通常用黄金分割法或者插值迭代法(指先采样若干个点，插值出一个函数再求最优解)来处理。
+
+与之相区别，"\textbf{非精确的一维搜索}"只希望找到某些条件的粗略近似解，可以提高整体的计算效率。
+
+设$\bar{\alpha}_k$是使得$f(\mathrm{x}^{(k)}+\alpha\mathrm{d}^{(k)})=f(\mathrm{x}^{(k)})$的最小的正数。由于预设函数$\varphi$满足\key{单峰性}，所以就需要从区间$[0,\bar{\alpha}_k]$中寻找一个可以接受的步长$\alpha$作为步长。比如通过Glodstein条件就可以快速找到一个令人满意的值。
+
+\paragraph{Goldstein条件}
+$$
+\begin{aligned}
+    \varphi(\alpha)&\le \varphi(0)+\rho\alpha\varphi'(0)\\
+    \varphi(\alpha)&\ge \varphi(0)+(1-\rho)\alpha\varphi'(0)
+\end{aligned}
+$$
+其中$\rho\in(0,\frac{1}{2})$，是一个固定的参数。
+
+上式可以保证$\alpha$满足一定的下降率。因为$\varphi(0)$表示$f$在$\mathrm{x}^{(k)}$的取值，$\varphi(0)+\rho\alpha\varphi'(0)$表示关于$\alpha$的一条直线，而$\varphi(\alpha)$要在这条直线的下方($\varphi'(0)=\nabla f^\top\mathrm{d}^{(k)}<0$，斜率小于0)。而$\varphi(\alpha)$要更小。
+
+同理，下面的式子则表示图中蓝色的线。由于$\rho\in(0,\frac{1}{2})$，所以$1-\rho>\rho$，所以蓝色的线更加陡一点。添加一条蓝色的线是为了防止$\alpha$无线接近于0，防止下降太慢。
+
+\begin{figure}[H]%使用H表示Here，不对图片排版！
+    \centering
+    \begin{overpic}[width=0.5\linewidth]{fig/1.2.png}
+    \end{overpic}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+这样，$\alpha$就落在图中的红圈内部。
+
+显然，从图中就可以看出Glodstein条件的问题。在图中，最好的$\alpha$的取值被忽略了。最好能找到一个不排除最优解的区域。
+
+\paragraph{Wolfe-Powell条件}
+$$
+\begin{aligned}
+    \varphi(\alpha)&\le \varphi(0)+\rho\alpha\varphi'(0)\\
+    \varphi'(\alpha)&\ge \sigma\varphi'(0)
+\end{aligned}
+$$
+其中，$\sigma\in(\rho,1)$，是另一个固定的参数。上面的约束和Goldstein条件相同。下面的约束对蓝色直线的斜率进行了约束。具体可以参见下图。因为在最优解的地方，切线的斜率为0；$\sigma\varphi'(0)$是一个小于0的值，因此约束$\varphi'(\alpha)\ge \sigma\varphi'(0)$是可以保证$\alpha$最小取值是在最优解左侧的。但保证一个负的最小值又可以防止$\alpha$太靠近0。
+
+\begin{figure}[H]
+    \centering
+    \begin{overpic}[width=0.5\linewidth]{fig/1.3.png}
+    \end{overpic}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+有时候，也可以使用这个条件：
+$$
+\lvert \varphi'(\alpha) \lvert \le -\sigma\varphi'(0)
+$$
+
+\paragraph{基于Wolfe-Powell准则的一维搜索算法}
+如果从区间内随便选点的话很容易代价过大，因此需要根据准则，定制一套明确的算法。
+\begin{enumerate}
+    \item \key{初始化}\\规定初始搜索区间为$[0,\bar{\alpha}]$;\\选择固定的$\rho\in(0,1/2);\sigma\in(\rho,1)$，\\令$\varphi_0=\varphi(0)=f(\mathrm{x^{(k)}});\varphi_0'=\varphi'(0)=\nabla f(\mathrm{x}^{(k)})^\top\mathrm{d}^{(k)}$，\\定义$a_1=0,a_2=\bar{\alpha}$作为$\alpha$取值的上下界,$\varphi_1=\varphi_0,\varphi_1'=\varphi_0'$，\\选择适当的$\alpha\in(a_1,a_2)$
+    \item \key{调整下界}\\
+    计算$\varphi(\alpha)=f(\mathrm{x}^{(k)}+\alpha\mathrm{d}^{(k)})$，如果满足$\varphi(\alpha)\le \varphi(0)+\rho\alpha\varphi'(0)$，则进入下一步；\\
+    否则更新$\hat{\alpha}$
+    $$
+    \hat{\alpha}=a_1+\frac{1}{2}\frac{(a_1-\alpha)^2\varphi_1'}{(\varphi_1-\varphi)-(a_1-\alpha)\varphi_1'}
+    $$
+    这实际上是对$\varphi_1,\varphi_1',\varphi$三点构造的二次插值多项式的极小点。\\
+    令$a_2=\alpha,\alpha=\hat{\alpha}$，缩小取值范围，并重复此步。
+    \item \key{调整上界}\\
+    计算$\varphi'=\varphi'(\alpha)=\nabla f(\mathrm{x}^{(k)}+\alpha\mathrm{d}^{(k)})^\top\mathrm{d}^{(k)}$，如果满足$\varphi'(\alpha)\ge\sigma\varphi'(0)$，则输出$\alpha_k=\alpha$，算法结束。\\
+    否则更新$\hat{\alpha}$
+    $$
+    \hat{\alpha}=\alpha-\frac{(a_1-\alpha)\varphi'}{\varphi_1'-\varphi'}
+    $$
+    这同样是二次插值的极小点。\\
+    令$a_1=\alpha,\alpha=\hat{\alpha},\varphi_1=\varphi,\varphi_1'=\varphi'$，返回上一步重新调整下界。
+\end{enumerate}
+
+\subsection{全局收敛与局部收敛}
+指初始点选择的范围大小。以上的方法都满足全局收敛的要求。
+\paragraph{全局收敛}从任意初始点出发，都可以收敛到最优解，称为全局收敛。
+\paragraph{局部收敛}初始点必须在最优解的附近。
+
+\section{最速下降法}
+最速下降法以负梯度方向作为下降方向。其满足全局收敛性，也就是说任意一个点采用最速下降法，其梯度方向都会趋向于0向量。具体迭代过程可以参考这张图：
+\begin{figure}[H]
+    \centering
+    \begin{overpic}[width=0.5\linewidth]{fig/1.4.png}
+    \end{overpic}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+图中，每一次移动的方向都是当前点$\mathrm{x}_n$的负梯度方向。而每次移动的长度则由线搜索来决定。
+
+在图中，$\mathrm{g}^{k+1}$和$\mathrm{g}^{k}$是相互垂直的。这是因为图中的线搜索是``精确的一维搜索''，那么这两个梯度就是互相垂直的。呈现如图的情况。如果不是精确的一维搜索，则有可能更快也可能变慢。
+
+这种方法，点的移动轨迹是一个``Z"字型。如果采用一些策略，比如改变方向或者改变步长，则可能可以更快的收敛到结果。因此，最速下降法的收敛取决于函数等值线的形状。
+
+最速下降法通常只有线性的收敛速度，对于无约束的问题来说，这是远远不够的。比如对于著名的测试函数Rosenbrock function，这个函数的等值线是一个长短轴比例非常悬殊的椭圆形。
+$$
+f(x_1,x_2)=100(x_2-x_1^2)^2+(1-x_1)^2
+$$
+这个函数的图像是：
+\begin{figure}[H]
+    \centering
+    \begin{overpic}[width=0.5\linewidth]{fig/1.5.png}
+    \end{overpic}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+
+\section{牛顿法}
+牛顿法的下降方向是Hessian矩阵的逆矩阵乘以梯度方向。设$f(\mathrm{x})$是二次可微的实函数，在$\mathrm{x}^{(k)}$处做二阶的泰勒展开，有
+$$
+f(\mathrm{x}^{(k)}+\mathrm{s})\approx q^{(k)}(\mathrm{s})=f(\mathrm{x}^{(k)})+\mathrm{g}^{(k)^\top}\mathrm{s}+\frac{1}{2}\mathrm{s}^\top G_k\mathrm{s}
+$$
+其中$\mathrm{g}^{(k)}=\nabla f(\mathrm{x}^{(k)})$，是梯度；$G_k=\nabla^2f(\mathrm{x}^{(k)})$，是Hessian矩阵；将$q^{(k)}(\mathrm{s})$极小化，就可以得到
+$$
+\mathrm{s}=-G_k^{-1}\mathrm{g}^{(k)}
+$$
+将$\mathrm{s}$作为搜索方向，就称为\textbf{牛顿方向}。
+
+对于正定二次函数
+$$
+f(\mathrm{x})=\frac{1}{2}\mathrm{x}^\top G\mathrm{x}-\mathrm{c}^\top\mathrm{x}
+$$
+对于任意的$\mathrm{x}$，都有$\nabla^2f(\mathrm{x})=G$。那么
+$$
+\mathrm{d}^{(0)}=-G^{-1}\nabla f(\mathrm{x}^{(0)})=-G^{-1}(G\mathrm{x}^{(0)}-\mathrm{c})=-(\mathrm{x}^{(0)}-\mathrm{x}^\star)
+$$
+使用$\mathrm{x}^\star=G^{-1}\mathrm{c}$表示问题的最优解。如果$\mathrm{x}^{(0)}\neq\mathrm{x}^\star$，那么取步长$\alpha_0=1$，就有$\mathrm{x}^{(1)}=\mathrm{x}^{(0)}+\alpha_0\mathrm{d}^{(0)}=\mathrm{x}^\star$，也就是说经过一次迭代之后就可以达到最优解，而最速下降法需要多次迭代。最速下降法下降的速度取决于Hessian矩阵的特征值的差异，也对应椭圆的长短轴。
+
+基于以上事实，可以认为对于一般的非线性函数，在迭代中取这样的搜索方向也是比较合适的。
+
+特别的，令步长$\alpha\equiv 1$，迭代公式就变为
+$$
+\mathrm{x}^{(k+1)}=\mathrm{x}^{(k)}-G_k^{-1}\mathrm{g}^{(k)}
+$$
+这就是经典的牛顿法更新公式。
+
+\paragraph{性质}
+\begin{enumerate}
+    \item 对于正定二次函数，牛顿法可以一步达到最优解。对于非二次函数，牛顿法无法保证有限次迭代；但是在初始点靠近极小点的时候，收敛速度一般会很快，因为此时目标函数可以较好的用二次函数来模拟。
+    \item 牛顿法是\key{局部收敛}的，在满足一定条件的情况下，收敛速率是二阶的。
+\end{enumerate}
+收敛性证明(略，详见视频)
+
+\subsection{改进策略}
+\paragraph{阻尼牛顿法}
+阻尼牛顿法对步长的步骤进行改进，采用一维搜索来确定步长，从而避免局部收敛。
+\begin{enumerate}
+    \item \key{初始化}初始点$\mathrm{x}^{(0)}$，设置终止误差$\epsilon>0$
+    \item 计算$\mathrm{g}^{(k)}=\nabla f(\mathrm{x}^{(k)})$，如果$\lVert \mathrm{g}^{(k)} \lVert <\epsilon$，则算法结束
+    \item \key{解线性方程组}$G_k\mathrm{d}=-\mathrm{g}^{(k)}$，获得牛顿方向$\mathrm{d}^{(k)}$
+    \item 采用一维搜索确定$\alpha_k$，更新$\mathrm{x}$，并且回到第1步
+\end{enumerate}
+这种方法可以缓解经典牛顿法局部收敛的缺点，但是需要解线性方程组，且无法确保$\mathrm{d}^{(k)}$满足全局收敛的条件。
+
+一般来说早期会使用一维搜索确定步长，后期则固定$\alpha_k=1$
+
+\paragraph{Goldstein \& Price}
+$$
+\mathrm{d}^{(k)}=\left\{
+\begin{aligned}
+    &-G_k^{-1}\mathrm{g}^{(k)},\quad if\ \cos\theta_k>\eta\\
+    &-\mathrm{g}^{(k)},\quad otherwise
+\end{aligned}
+\right.
+$$
+也就是根据$\theta$的取值来决定使用最速下降还是牛顿法。可以保证全局收敛性。缺点是不太好分析收敛效率。
+
+\paragraph{Levenberg,Marquardt,Goldfeld,et.al}
+$$
+(G_k+\mu_kI)\mathrm{d}^{(k)}=-\mathrm{g}^{(k)}
+$$
+L-M方法的优势是，在阻尼牛顿法中，需要$G_k\mathrm{d}=-\mathrm{g}^{(k)}$，这么做可以便于分析。是一种牛顿方向和负梯度方向的综合，可以通过$\mu_k$调节倾向于牛顿方向还是负梯度方向。$\mu_k$取值可以大于$G_k$的最小特征值，使其变成正定矩阵。
+
+\paragraph{负曲率方向法}
+如果方向$\mathrm{d}$，满足
+$$
+\mathrm{d}^\top\nabla^2f(\mathrm{x})\mathrm{d}<0
+$$
+则称其为负曲率方向。
+
+当Hessian矩阵不正定的时候，可以用负曲率方向来修正牛顿法。
+
+\paragraph{拟牛顿法}
+运用牛顿法需要计算二阶导数，代价高，且Hessian矩阵不一定正定，甚至奇异。如果使用不含二阶导的矩阵$H_k$来近似牛顿法中的Hessian矩阵的逆，这种方法被称为\key{拟牛顿法}。
+
+构造近似矩阵有不同的方法，因此拟牛顿法也有多种类型。
+\end{document}
