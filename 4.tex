@@ -1,0 +1,299 @@
+\documentclass[a4paper]{D:/repositories/MyDGP/latex/PaperReadingLog}
+\usepackage{caption}
+\usepackage{overpic}
+\usepackage{float}
+
+\usepackage{enumitem} 
+\usepackage{amsfonts,amssymb,amsmath}
+
+\usepackage{algorithm}%%算法伪代码，支持中文
+\usepackage{algorithmic}
+\setmainfont{Arial}
+
+\begin{document}
+
+\PaperInfo
+{4.非线性约束的最优化问题}
+{朱}
+{天宇}
+{}
+
+% \section{库恩塔克条件}
+% K-T条件是判定非线性约束问题的某个可行点是否为极小点的必要条件(至少需要满足)；如果问题是凸问题，那么就是充要条件。
+
+% \section{Newton-Raphson迭代法}
+
+\section{等式约束的情形}
+\begin{equation}
+    \label{equ1}
+    \begin{aligned}
+        \min\quad& f(\mathrm{x})\\
+        s.t.\quad& \mathrm{c}(\mathrm{x})=0
+    \end{aligned}        
+\end{equation}
+
+这里要求$\mathrm{c}(\mathrm{x})=(c_1(\mathrm{x}),c_2(\mathrm{x}),...,c_m(\mathrm{x}))^\top$。
+
+\paragraph{最优性条件}
+记$\mathrm{A}(\mathrm{x})=[\nabla\mathrm{c}(\mathrm{x})]^\top=(\nabla c_1(\mathrm{x},...,\nabla c_m(\mathrm{x})))^\top$，那么$\mathrm{x}$是等式约束问题\ref{equ1}的K-T点当且仅当存在乘子$\lambda\in\mathbb{R}^m$，使得
+$$
+    \nabla f(\mathrm{x})-\mathrm{A}(\mathrm{x})^\top\lambda=0
+$$
+
+且$\mathrm{x}$是一个可行点，即$\mathrm{c}(\mathrm{x})=0$。讨论这个式子可以关注一下方程的维度。其实际上就是问题\ref{equ1}的拉格朗日函数$L(\mathrm{x},\lambda)$的导数
+
+$$
+\left\{
+\begin{aligned}
+    \nabla_\mathrm{x}L&=\nabla f(\mathrm{x})-\mathrm{A}(\mathrm{x})^\top \lambda&=0\\
+    \nabla_\lambda L&=-\mathrm{c}(\mathrm{x})&=0
+\end{aligned}
+\right.
+$$
+
+ 这是一个无约束的非线性方程组，可以通过Newton-Raphson方法求出解。
+
+ 记$\mathrm{x},\lambda$的计算增量分别为$\delta_\mathrm{x},\delta_\lambda$，计算
+\begin{equation}    
+    \label{equ2}
+     \begin{pmatrix}
+    \mathrm{W}(\mathrm{x},\lambda) & -\mathrm{A}(\mathrm{x})^\top\\
+    -\mathrm{A}(\mathrm{x}) & 0
+    \end{pmatrix}
+    \begin{pmatrix}
+    \delta_\mathrm{x}\\
+    \delta_\lambda
+    \end{pmatrix}
+    =-
+    \begin{pmatrix}
+        \nabla f(\mathrm{x})-\mathrm{A}(\mathrm{x})^\top \lambda\\
+        -\mathrm{c}(\mathrm{x})
+    \end{pmatrix}
+\end{equation}
+
+其中，$\mathrm{W}(\mathrm{x},\lambda)=\nabla^2f(\mathrm{x})-\sum_{i=1}^m\lambda_i\nabla^2c_i(\mathrm{x})$，表示目标函数和约束的二阶导数；$\lambda_\mathrm{x},\delta_\lambda$是迭代方向。这是一个典型的牛顿迭代的步骤。是一维情况的高维延申。
+$$
+\mathrm{x}^{k+1}-\mathrm{x}^k=\frac{g(\mathrm{x}^k)}{g'\mathrm{x}^k}
+$$
+
+因此，定义价值函数
+\begin{equation}
+    \label{equ3}
+    \psi(\mathrm{x},\lambda)=\lVert \nabla f(\mathrm{x})-\mathrm{A}(\mathrm{x})^\top \lambda\lVert^2+\lVert \mathrm{c}(\mathrm{x})\lVert ^2
+\end{equation}
+
+显然，$\psi(\mathrm{x},\lambda)$是一个关于拉格朗日-牛顿方法的下降函数。即满足
+$$
+    \nabla \psi(\mathrm{x},\lambda)^\top\begin{pmatrix}
+        \delta_\mathrm{x}\\ \delta_\lambda
+    \end{pmatrix}
+    =-2\psi(\mathrm{x},\lambda)\le 0
+$$
+
+\subsection{Lagrange-Newton法}
+\begin{algorithm}[H]
+	\caption{拉格朗日-牛顿法} 
+	\begin{algorithmic}[1]
+		% 初始化
+		\STATE 给定$\mathrm{x}^0,k\leftarrow 0,\lambda\in\mathbb{R}^m,\beta\in(0,1),\epsilon\ge 0$
+        \WHILE{$\psi(\mathrm{x}^k,\lambda^k)>\epsilon$}
+            \STATE 求解公式\ref{equ2}，获得下降方向$(\delta_{\mathrm{x}^k},\delta_{\lambda^k})$，令$\alpha_k\leftarrow 1$
+            \WHILE{$\psi(\mathrm{x}^k+\alpha_k\delta_{\mathrm{x}^k},\lambda^k+\alpha_k\delta_{\lambda^k})>(1-\beta\alpha_k)\psi(\mathrm{x}^k,\lambda^k)$}
+                \STATE $\alpha_k=\frac{1}{4}\alpha_k$
+            \ENDWHILE
+            \STATE $\mathrm{x}^{k+1}\leftarrow \mathrm{x}^k+\alpha_k\delta_{\mathrm{x}^k},\lambda^{k+1}\leftarrow \lambda^k+\alpha_k\delta_{\lambda^k},k\leftarrow k+1$
+        \ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
+
+这个算法首先计算价值函数\ref{equ3}，只要价值函数的值大于一个极小的值，就进行从第三行开始的循环。通过公式\ref{equ2}来获取下降方向，并且通过回退的方法求出步长，依次进行迭代更新。
+
+\section{含有不等式约束的情形}
+\subsection{逐步二次规划方法}
+Sequential Quadratic Programming Method,SQP,逐步二次规划。
+
+可以将公式\ref{equ2}写成如下形式
+\begin{equation}
+    \label{equ4}
+\left\{
+\begin{aligned}
+    \mathrm{W}(\mathrm{x},\lambda)\delta_\mathrm{x}+\nabla f(\mathrm{x})&=\mathrm{A}(\mathrm{x})^\top (\lambda+\delta_\lambda)\\
+    \mathrm{c}(\mathrm{x})+\mathrm{A}(\mathrm{x})\delta_\mathrm{x}&=0
+\end{aligned}
+\right.
+\end{equation}
+
+对比二次规划的问题和KT方程组的对应关系，可以发现，根据最优性条件可知，$\delta_{\mathrm{x}^k}$是下列\key{二次规划问题}的K-T点：
+\begin{equation}
+    \label{equ5}
+    \begin{aligned}
+        \min\quad&\frac{1}{2}\mathrm{d}^\top\mathrm{W}(\mathrm{x}^k,\lambda^k)\mathrm{d}+\nabla f(\mathrm{x}^k)^\top\mathrm{d}\\
+        s.t.\quad&\mathrm{c}(\mathrm{x}^k)+\mathrm{A}(\mathrm{x}^k)\mathrm{d}=0
+    \end{aligned}
+\end{equation}
+
+\key{拉格朗日牛顿方法可以理解为逐步求解上述等式约束二次规划的方法。}
+
+设$\mathrm{d}^k$是二次规划问题\ref{equ5}的最优解，那么就可以迭代更新求出问题。
+$$
+\mathrm{x}^{k+1}=\mathrm{x}^k+\alpha_k\mathrm{d}^k
+$$
+
+设$\bar{\lambda}^k$是问题\ref{equ5}对应的拉格朗日乘子向量，相当于\ref{equ4}第一个等式中的$(\lambda+\delta_\lambda)$。那么对于$k\ge 1$有
+$$
+\lambda^{k+1}=\lambda^k+\alpha_k(\bar{\lambda}^k-\lambda^k)
+$$
+
+其中$\alpha_k$是第$k$次的迭代步长。
+
+\subsection{扩展到不等式约束的情况}
+考虑一般形式的非线性约束的最优化问题。
+
+\begin{equation}
+    \label{equ6}
+    \begin{aligned}
+        \min\quad& f(\mathrm{x})\\
+        s.t.\quad& c_i(\mathrm{x})=0,\quad i\in\mathcal{E}={1,...,m_e}\\
+                      & c_i(\mathrm{x})\ge 0,\quad i\in\mathcal{I}={m_e+1,...,m}
+    \end{aligned}        
+\end{equation}
+
+类似的，在第$k$次迭代中，求解二次规划子问题：
+\begin{equation}
+    \label{equ7}
+    \begin{aligned}
+        \min\quad&\frac{1}{2}\mathrm{d}^\top\mathrm{W}_k\mathrm{d}+{\mathrm{g}^k}^\top\mathrm{d}\\
+        s.t.\quad&c_i(\mathrm{x}^k)+\mathrm{a}_i(\mathrm{x}^k)^\top\mathrm{d}=0,i\in\mathcal{E}\\
+        &c_i(\mathrm{x}^k)+\mathrm{a}_i(\mathrm{x}^k)^\top\mathrm{d}\ge 0,i\in\mathcal{I}
+    \end{aligned}
+\end{equation}
+
+在这里，$\mathrm{W}_k$是原问题的拉格朗日函数的Hessian阵或者是近似；
+$$
+\begin{aligned}
+    \mathrm{g}^k&=\nabla f(\mathrm{x}^k)\\
+    \mathrm{A}(\mathrm{x}^k)&=(\mathrm{a}_1(\mathrm{x}^k),...\mathrm{a}_m(\mathrm{x}^k))^\top=[\nabla\mathrm{c}(\mathrm{x}^k)]^\top
+\end{aligned}
+$$
+
+记子问题\ref{equ7}的解为$\mathrm{d}^k$，拉格朗日乘子向量为$\bar{\lambda}^k$，那么就有
+\begin{equation}
+\label{equ8}
+    \left\{
+    \begin{aligned}
+        \mathrm{W}_k\mathrm{d}^k+\mathrm{g}^k&=\mathrm{A}(\mathrm{x}^k)^\top\bar{\lambda}^k\\
+        \bar{\lambda_i}^k&\ge 0,i\in\mathcal{I}\\
+        \mathrm{c}(\mathrm{x}^k)+\mathrm{A}(\mathrm{x}^k)\mathrm{d}^k&=0
+    \end{aligned}
+\right.
+\end{equation}
+
+这个式子和\ref{equ4}有相同的格式。$\mathrm{d}^k$是这个问题的解。同样的，构造一个价值函数(罚函数)。定义的方法有多种。例如$L_1$罚函数：
+$$
+P(\mathrm{x},\sigma)=f(\mathrm{x})+\sigma(\sum_{i=1}^{m_e}\lvert c_i(\mathrm{x})\lvert+\sum_{i=m_e+1}^m\lvert c_i(\mathrm{x})_{-}\lvert)
+$$
+
+其中，
+$$
+\left\{
+\begin{aligned}
+    c_i(\mathrm{x})_-&=c_i(\mathrm{x}),\quad&i\in\mathcal{E}\\
+    c_i(\mathrm{x})_-&=\min\{0,c_i(\mathrm{x})\},\quad&i\in\mathcal{I}\\
+\end{aligned}    
+\right.
+$$
+
+\subsection{Han(1977)}
+一个简单的二次规划算法框架：
+\begin{algorithm}[H]
+	\caption{Han(1977)} 
+	\begin{algorithmic}[1]
+		\STATE 给定$\mathrm{x}^0,k\leftarrow 0,\mathrm{W}_0\in\mathbb{R}^{n\times n},\sigma>0,\rho\in(0,1),\epsilon\ge0$
+        \STATE 求解子问题\ref{equ8}，获取$\mathrm{d}^k$
+        \WHILE{$\mathrm{d}^k>\epsilon$}
+            \STATE 求取适当的$\alpha_k\in[0,\rho]$，使得$$
+            P(\mathrm{x}^k+\alpha_k\mathrm{d}^k,\sigma)\le\min_{0\le\alpha\le\rho}P(\mathrm{x}^k+\alpha\mathrm{d}^k,\sigma)+\epsilon_k
+            $$
+            \STATE $\mathrm{x}^{k+1}\leftarrow\mathrm{x}^k+\alpha_k\delta_{\mathrm{x}^k}$，更新$\mathrm{W}_{k+1}$，$k\leftarrow k+1$
+            \STATE 求解子问题\ref{equ8}，获取$\mathrm{d}^k$
+        \ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
+
+这是一个比较早期的算法框架，现代有很多对此改进的方法，主要改进点是算法第4行的部分，更快的获取一个更好的步长。
+
+\section{罚函数法}
+对于前述的一般形式的非线性约束的最优化问题。
+
+\begin{equation}
+    \label{equ9}
+    \begin{aligned}
+        \min\quad& f(\mathrm{x})\\
+        s.t.\quad& c_i(\mathrm{x})=0,\quad i\in\mathcal{E}={1,...,m_e}\\
+                      & c_i(\mathrm{x})\ge 0,\quad i\in\mathcal{I}={m_e+1,...,m}
+    \end{aligned}        
+\end{equation}
+
+罚函数方法构造关于目标函数$f(\mathrm{x})$与约束方程$\mathrm{c}(\mathrm{x})$的拥有\key{惩罚性质}的函数：
+$$
+P(\mathrm{x})=P(f(\mathrm{x}),\mathrm{c}(\mathrm{x}))
+$$
+
+\paragraph{``惩罚性质"}
+如果一个点是问题的可行点$\mathrm{x}\in S$，那么有$P(\mathrm{x})=f(\mathrm{x})$；而当约束条件被破坏的时候，$P(\mathrm{x})>f(\mathrm{x})$。
+
+比如前述定义的$\mathrm{c}(\mathrm{x})_-$：
+$$
+\left\{
+\begin{aligned}
+    c_i(\mathrm{x})_-&=c_i(\mathrm{x}),\quad&i\in\mathcal{E}\\
+    c_i(\mathrm{x})_-&=\min\{0,c_i(\mathrm{x})\},\quad&i\in\mathcal{I}\\
+\end{aligned}    
+\right.
+$$
+
+如果一个点是可行点，那么其等式约束、不等式约束都被满足。因此$\mathrm{c}(\mathrm{x})_-$的等式约束部分就和问题的等式约束一致；不等式约束部分($c_i(\mathrm{x})\ge 0$)则为0与$\mathrm{c}(\mathrm{x})$的较小值。
+
+因此罚函数可以取目标函数与罚项之和：
+$$
+P(\mathrm{x})=f(\mathrm{x})+\phi(\mathrm{c}(\mathrm{x})_-)
+$$
+
+罚项需要满足
+$$
+\phi(0)=0,\quad\lim_{\lVert \mathrm{c}\lVert \rightarrow \infty}\phi(\mathrm{c})=+\infty
+$$
+
+且最好和方向没有关系。也就是``径向函数"
+
+\paragraph{Courant罚函数}
+    $$
+    P_\sigma(\mathrm{x})=f(\mathrm{x})+\sigma\lVert \mathrm{c}(\mathrm{x})_-\lVert_2^2
+    $$
+
+    在这里$\sigma$是罚因子。
+
+记$\mathrm{x}(\sigma)$是无约束问题$\min_{\mathrm{x}\in\mathbb{R}^n}P_{\sigma}(\mathrm{x})$的最优解，且同时也是原问题\ref{equ9}的可行点，那么$\mathrm{x}(\sigma)$也是该问题的最优解。因为只要可行，那么罚项就等于0。
+
+如果罚因子$\sigma$充分大，那么在优化的时候就会更充分地考虑$\lVert \mathrm{c}(\mathrm{x})_-\lVert^2$，此项更加敏感，从而可以保证可行性；如果$\sigma$一开始就很大，那么解罚函数的数值层面就比较困难。因此在实际计算中，$\sigma$都是逐渐增大的。
+
+\subsection{罚函数方法的迭代步骤}
+\begin{algorithm}[H]
+	\caption{罚函数法框架}
+	\begin{algorithmic}[1]
+		\STATE 任选初始点$\mathrm{x}^0$，给定罚因子$\sigma_0>0,\beta>1,\epsilon>0,k\leftarrow 0$
+        \WHILE{true}
+            \STATE 求解罚函数的无约束问题的极小点，记为$\mathrm{x}(\sigma_k)$，即
+            $$
+            \mathrm{x}(\sigma_k)=\arg\min_{\mathrm{x}\in\mathbb{R}^n}P_{\sigma_k}(\mathrm{x})
+            $$
+            \IF {$\lVert \mathrm{c}(\mathrm{x}(\sigma_k))_-\lVert<\epsilon$}
+                \STATE 算法结束，取$\mathrm{x}(\sigma_k)$作为原问题的近似最优解
+            \ELSE
+                \STATE $\mathrm{x}^{k+1}\leftarrow \mathrm{x}(\sigma_k),\sigma_{k+1}\leftarrow\beta\sigma_k,k\leftarrow k+1$
+            \ENDIF
+        \ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
+
+\end{document}

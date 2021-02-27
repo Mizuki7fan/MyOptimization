@@ -5,172 +5,139 @@
 
 \usepackage{enumitem} 
 \usepackage{amsfonts,amssymb,amsmath}
-%\usepackage[linesnumbered,ruled,lined]{algorithm2e}%%伪代码
-\usepackage{multicol}
-\usepackage{wrapfig}
+
 \usepackage{algorithm}%%算法伪代码，支持中文
 \usepackage{algorithmic}
-
 \setmainfont{Arial}
 
 \begin{document}
 
 \PaperInfo
-{拟牛顿法}
+{2.基于信赖域的无约束问题的最优化方法}
 {朱}
 {天宇}
 {}
 
-牛顿法需要求函数的Hessian矩阵，对于大规模的问题，这需要很大的代价。\textbf{拟牛顿法}使用Hessian矩阵或者其逆矩阵来近似，来替代求解Hessian矩阵的过程。其近似的矩阵记为$\mathrm{B^k}$，保留了Hessian矩阵的部分性质。
-
-\section{割线方程}
-牛顿法的推导基于函数$f(x)$的泰勒二次展开：
+\section{信赖域方法}
+信赖域方法首先定义当前迭代点的一个邻域
 $$
-\nabla f(x)=\nabla f(x^{k+1})+\nabla^2f(x^{k+1})(x-x^{k+1})+\mathcal{O}(\lVert x-x^{k+1}\lVert^2)
+\Omega_k=\{\mathrm{x}\in\mathbb{R}^n | \lVert \mathrm{x}-\mathrm{x}^k \lVert \le e_k \}
 $$
 
-这里，令$x=x^k,s^k=x^{k+1}-x^k,y^k=\nabla f(x^{k+1})-\nabla f(x^k)$，上式可以写成
-$$
-\nabla^2f(x^{k+1})s^k+\mathcal{O}(\lVert s^k \lVert^2)=y^k
-$$
-忽略高阶项$\mathcal{O}$，那么我们希望Hessian的近似矩阵$\mathrm{B}^{k+1}$满足
-$$
-y^k=\mathrm{B}^{k+1}s^k
-$$
-使用$\mathrm{H}^{k+1}$表示$\mathrm{B}^k$的逆矩阵，就有
-$$
-s^k=\mathrm{H}^{k+1}y^k
-$$
-这两个式子被称为\textbf{割线方程}。
+这里，$\lVert \bullet \lVert$可以是任意意义的模；$e_k$是信赖域半径；$\Omega_k$称为信赖域。
 
-割线方程的本质是希望目标函数$f(x)$和其二次近似$m_{k+1}(d)=f(x^{k+1})+\nabla f(x^{k+1})^\top d+\frac{1}{2}d^\top \mathrm{B}^{k+1}d$，在$x=x^k,x=x^k+1$处有相同的梯度。
+在这个邻域内，二次模型$q^k(\mathrm{s})$是目标函数$f(\mathrm{x})$的一个合适的近似，在此信赖域中极小化二次模型后得到的近似极小点$\mathrm{s}^k$，并且取$\mathrm{x}^{k+1}=\mathrm{x}^k+\mathrm{s}^k$。
 
-\paragraph{曲率条件}
-近似矩阵$\mathrm{B}^k$需要正定，对式子$y^k=\mathrm{B}^{k+1}s^k$两边同时左乘$(s^k)^\top$，就可以得到\textbf{必要条件}
-$$
-(s^k)^\top \mathrm{B}^{k+1}s^k=(s^k)^\top y^k>0
-$$
-这被称为曲率条件。
+\textbf{信赖域拥有全局收敛性，并且不要求Hessian矩阵正定。}
 
-在\textbf{线搜索}的时候，需要使用Wolfe准则来使得曲率条件成立。根据Wolfe准则的第二个条件$\varphi'(\alpha)\ge \sigma\varphi'(0)$，写成梯度形式，两侧同时乘以$s^k$，就有
-$$
-\nabla f(x^{k+1})^\top s^k\ge \sigma\nabla f(x^k)^\top s^k
-$$
-两边同时减去$\nabla f(x^k)^\top s^k$，就有
-$$
-(y^k)^\top s^k\ge (\sigma-1)\nabla f(x^k)^\top s^k>0
-$$
-因为$\sigma<1$，且$s^k=\alpha_kd^k$，是下降方向。
+\section{算法流程}
 
-通常，近似矩阵$\mathrm{B}^k,\mathrm{H}^k$都迭代更新的。有的方法近似$\mathrm{B}^k$，有的方法近似$\mathrm{H}^k$
+介绍算法之前，首先要介绍\textbf{信赖域子问题}。
 
-\section{秩一更新SR1}
-使用\textbf{待定系数法}，已知$\mathrm{B}^k$，满足割线方程，求$\mathrm{B}^{k+1}$。
+\subsection{信赖域子问题}
+信赖域方法无需求解每一次迭代的方向，而是求解一个带约束的子问题：
 
-设$\mathrm{B}^{k+1}=\mathrm{B}^k+auu^\top$，带入割线方程
-$$
-\mathrm{B}^{k+1}s^k=(\mathrm{B}^k+auu^\top)s^k=y^k
-$$
-从而有
-$$
-(a\cdot u^\top s^k)u=y^k-\mathrm{B}^ks^k
-$$
-由于$(a\cdot u^\top s^k)$是标量，因此$u$与$y^k-\mathrm{B}^ks^k$方向是相同的。不妨令$u=y^k-\mathrm{B}^ks^k$，带入上式，有
-$$
-a((y^k-\mathrm{B}^ks^k)^\top s^k)(y^k-\mathrm{B}^ks^k)=y^k-\mathrm{B}^ks^k
-$$
-可得$a=\frac{1}{(y^k-\mathrm{B}^ks^k)^\top s^k}$，带入最初的式子，就有
-$$
-\mathrm{B}^{k+1}=\mathrm{B}^k+\frac{(y^k-\mathrm{B}^ks^k)(y^k-\mathrm{B}^ks^k)^\top}{(y^k-\mathrm{B}^ks^k)^\top s^k}
-$$
-相同方法可得
-$$
-\mathrm{H}^{k+1}=\mathrm{H}^k+\frac{(s^k-\mathrm{H}^ky^k)(s^k-\mathrm{H}^ky^k)^\top}{(s^k-\mathrm{H}^ky^k)^\top s^k}
-$$
-
-一个有趣的观察是，将公式1做如下替换则可获得公式2：
-$$
-\mathrm{B}^k\rightarrow\mathrm{H}^k,\quad s^k\rightarrow y^k
-$$
-
-SR1公式结构简单，但无法保证矩阵在迭代中保持正定。之前的条件只是充分条件。
-
-\section{秩二更新BFGS}
-
-同样使用待定系数法，设
-$$
-\mathrm{B}^{k+1}=\mathrm{B}^k+auu^\top+bvv^\top
-$$
-
-可推出基于$\mathrm{B}^k$的更新公式：
-$$
-\mathrm{B}^{k+1}=\mathrm{B}^k+\frac{y^k(y^k)^\top}{(s^k)^\top y^k}-\frac{\mathrm{B}^ks^k(\mathrm{B}^ks^k)^\top}{(s^k)^\top \mathrm{B}^ks^k}
-$$
-
-带入SMW公式可以获得$\mathrm{H}^k$的更新公式：
-$$
-\mathrm{H}^{k+1}=(\mathrm{I}-\rho_ks^k(y^k)^\top)^\top\mathrm{H}^k(\mathrm{I}-\rho_ks^k(y^k)^\top)+\rho_ks^k(s^k)^\top
-$$
-其中，$\rho_k=\frac{1}{(s^k)^\top y^k}$
-
-BFGS公式产生的矩阵$\mathrm{H}^{k+1}$正定的条件是满足不等式$(s^k)^\top y^k>0$，这可以通过线搜索保证。
-
-\section{有限内存的BFGS}
-大规模问题需要存储拟牛顿矩阵$\mathrm{B}^k$或者$\mathrm{H}^k$，需要消耗$\mathcal{O}(n^2)$的内存，不现实。LBFGS可以解决这个问题。
-
-首先，基于$\mathrm{H}^k$的BFGS，引入新符号后的表示为
-$$
-\mathrm{H}^{k+1}=(\mathrm{V}^k)^\top \mathrm{H}^k\mathrm{V}^k+\rho_ks^k(s^k)^\top
-$$
-其中，$\rho_k=\frac{1}{(s^k)^\top y^k}, \mathrm{V}^k=\mathrm{I}-\rho_ky^k(s^k)^\top$
-
-这个公式是一个\key{类似递推的形式}，因此尝试展开$m$次：
 $$
 \begin{aligned}
-   &\mathrm{H}^k\\
-   &=(\mathrm{V}^{k-m}...\mathrm{V}^{k-1})^\top \mathrm{H}^{k-m}(\mathrm{V}^{k-m}...\mathrm{V}^{k-1})+\\
-   &\rho_{k-m}(\mathrm{V}^{k-m+1}...\mathrm{V}^{k-1})^\top s^{k-m}(s^{k-m})^\top (\mathrm{V}^{k-m+1}...\mathrm{V}^{k-1})+\\
-   &\rho_{k-m+1}(\mathrm{V}^{k-m+2}...\mathrm{V}^{k-1})^\top s^{k-m+1}(s^{k-m+1})^\top (\mathrm{V}^{k-m+2}...\mathrm{V}^{k-1})+\\
-   &...+\\
-   &\rho_{k-1}s^{k-1}(s^{k-1})^\top
+    \min&\quad q^k(\mathrm{s})=f(\mathrm{x}^k)+(\mathrm{g}^k)^\top\mathrm{s}+\frac{1}{2}\mathrm{s}^\top\mathrm{B}_k\mathrm{s}\\
+    s.t.&\quad \lVert \mathrm{s} \lVert\le e_k
 \end{aligned}
 $$
 
-这样，通过$\mathrm{H}^{k-m}$就可以获得$\mathrm{H}^k$。但$\mathrm{H}^{k-m}$无法显示求出，所以要找\textbf{近似矩阵}$\hat{\mathrm{H}}^{k-m}$，一般来说这个矩阵的结构要比较简单。
+这里，$\mathrm{s}=\mathrm{x}-\mathrm{x}^k$，$\mathrm{g}^k=\nabla f(\mathrm{x}^k)$，$\mathrm{B}_k$是对称阵，可以是Hessian矩阵或者其近似，比如拟牛顿方法中的近似矩阵。等号右边是一个关于$\mathrm{s}$或者是关于$\mathrm{x}$的二次函数。在求出最小的点对应的$\mathrm{s}$之后，更新$\mathrm{x}^{k+1}=\mathrm{x}^k+\mathrm{s}^k$。
 
-实际上，$\mathrm{H}^k$的显式形式根本无需计算。只要计算$\mathrm{H}^k\nabla f(x^k)$即可。可以通过这个算法巧妙地计算$\mathrm{H}^k\nabla f(x^k)$。
+子问题的解$\mathrm{s}^k$总是能够使得
+$$
+f(\mathrm{x}^k+\mathrm{s}^k)\le f(\mathrm{x})
+$$
 
-\begin{algorithm}[H]
-	\caption{L-BFGS双循环递归算法} 
-	%\label{alg:alg1}
-	\begin{algorithmic}
-		% 输入
-		\REQUIRE $n \geq 0 \vee x \neq 0$ 
-		% 输出
-		\ENSURE $y = x^n$  较看脸
-		
+在这个子问题中，如果没有下方的约束，那么求出的二次模型的全局最小值就是牛顿法的值。但这么做无法保证全局收敛。通过某种方法确定信赖域后，可以保证$f(\mathrm{x}^k+\mathrm{s}^k)\le f(\mathrm{x})$。
+
+接下来讨论\key{如何寻找一个合适的$e_k$}。如果值太大，不一定可信赖；如果值太小，则迭代过慢。所以最好还是自适应的调整$e_k$。
+
+\paragraph{如何评价$e_k$}
+通过二次模型和目标函数直接的一致程度$r_k$来评价$e_k$是否是一个好的近似。
+$$
+r_k=\frac{Act_k}{Pre_k}=\frac{f(\mathrm{x}^k)-f(\mathrm{x}^k+\mathrm{s}^k)}{q^k(\mathrm{0})-q^k(\mathrm{s}^k)}
+$$
+
+\key{如果}：
+\begin{enumerate}
+    \item $r_k$接近于1，说明二次模型函数和目标函数的一致性很好，此时可以扩大半径$e_k$。
+    \item $r_k>0$但不接近1，维持$e_k$不变。
+    \item $r_k$接近于0甚至$r_k<0$，说明一致性不理想，此时要减小半径缩小信赖域。
+\end{enumerate}
+
+\subsection{算法框架}
+\begin{algorithm}
+	\caption{信赖域方法} 
+	\begin{algorithmic}[1]
 		% 初始化
-		\STATE $y \leftarrow 1$ 
-		
-		% 逻辑
-		\IF{$n < 0$} 
-			\STATE $X \leftarrow 1 / x$ 
-			\STATE $N \leftarrow -n$  jlk就
-		\ELSE 
-			\STATE $X \leftarrow x$ 
-			\STATE $N \leftarrow n$
-		\ENDIF
-		
-		\WHILE{$N \neq 0$} 
-			\IF{$N$ is even} 
-				\STATE $X \leftarrow X \times X$ 
-				\STATE $N \leftarrow N / 2$ 
-			\ELSIF{$N$ is odd}
-				\STATE $y \leftarrow y \times X$ 
-				\STATE $N \leftarrow N - 1$ 
-			\ENDIF 
-		\ENDWHILE
+		\STATE 给定初始点$\mathrm{x}^0$，信赖域半径的上界$\bar{e}$，$\epsilon>0,0<\gamma_1<\gamma_2<1,0<\eta_1<1<\eta_2$。选择$e_0\in(0,\bar{e}),k\leftarrow 0$
+        \WHILE[终止条件]{$\mathrm{g}^k \ge \epsilon$}
+        \STATE 求解\key{信赖域子问题}，获取$\mathrm{s}^k$
+        \STATE 评估信赖域半径：$
+        r_k\leftarrow\frac{Act_k}{Pre_k}=\frac{f(\mathrm{x}^k)-f(\mathrm{x}^k+\mathrm{s}^k)}{q^k(\mathrm{0})-q^k(\mathrm{s}^k)}
+        $
+        \IF[根据评估结果调整迭代点]{$r_k>0$}
+            \STATE $\mathrm{x}^{k+1}\leftarrow \mathrm{x}^k+\mathrm{s}^k$
+        \ELSE
+            \STATE $\mathrm{x}^{k+1}\leftarrow \mathrm{x}^k$
+        \ENDIF
+        \IF[$r_k$太小]{$r_k<\gamma_1$}
+            \STATE $e_{k+1}\leftarrow \eta_1e_k$
+        \ELSIF [$r_k$还不错] {$\gamma_1\le r_k<\gamma_2$}
+            \STATE $e_{k+1}\leftarrow e_k$
+        \ELSIF [$r_k$比较大]{$r_k\ge \gamma_2$}
+            \STATE $e_{k+1}\leftarrow\min(\eta_2e_k,\bar{e})$
+        \ENDIF
+        \STATE $k\leftarrow k+1$
+        \ENDWHILE
 	\end{algorithmic}
 \end{algorithm}
+
+相比线搜索方法，信赖域方法无需关心搜索方向和步长的问题，而是将其变成一个信赖域子问题，并且通过一个评估机制来自适应调整信赖域的半径大小。
+
+下面的算法中使用$\epsilon$作为停机准则，用$\gamma_1,\gamma_2$划分判定$r_k$评估的区间，并且使用$\eta$来缩放信赖域半径。
+
+\section{信赖域子问题求解}
+信赖域方法达到全局收敛性的一个条件是子问题必须有精确解。需要有一个比较简单的求解方法。相比牛顿法，信赖域子问题多了一个约束。而根据约束的模数不同，这个子问题又分为不同的情况。这里讨论模数为2的情况。此时问题变成一个含有二次约束的二次目标函数求解的问题。
+
+$$
+\begin{aligned}
+    \min&\quad q^k(\mathrm{s})=f(\mathrm{x}^k)+(\mathrm{g}^k)^\top\mathrm{s}+\frac{1}{2}\mathrm{s}^\top\mathrm{B}_k\mathrm{s}\\
+    s.t.&\quad \lVert \mathrm{s} \lVert\le e_k
+\end{aligned}
+$$
+
+\subsection{Powell折线法} 这种方法可以快速地求出信赖域子问题的一个非精确的解。
+
+\begin{figure}[H]%
+    \centering
+    \begin{overpic}[width=0.5\linewidth]{fig/2.1.png}
+    \end{overpic}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+
+在这张图中，红色的点$\mathrm{x}_c$表示\textbf{柯西点}，是函数在$\mathrm{x}^k$的\key{负梯度方向}的最优解，由于沿着负梯度方向的表达式是单变量的二次函数，所以可以求出一个最优点；蓝色的点$\mathrm{x}_n$表示\textbf{牛顿点}，是函数不考虑约束情况的全局极小点。
+
+$\mathrm{x}_c,\mathrm{x}_n$之间的连线，与二次约束的边界的交点，就是信赖域子问题的近似解。
+
+如果点$\mathrm{x}_c$在信赖域的外侧，那么$\mathrm{x}^k,\mathrm{x}_c$与信赖域边界的交点就是近似解；
+
+如果$\mathrm{x}_n$在信赖域内侧，那么$\mathrm{x}_n$正是需要找的近似点。
+
+\paragraph{性质} 折线法满足一下两条性质，可以解释这么做的合理性。
+\begin{enumerate}
+    \item 沿着柯西点$\mathrm{x}_c$向牛顿点$\mathrm{x}_n$的连线，到$\mathrm{x}^k$的距离单调增加；
+    \item 沿着柯西点$\mathrm{x}_c$向牛顿点$\mathrm{x}_n$的连线，子模型的函数值单调减少。
+\end{enumerate}
+
+\subsection{拉格朗日函数法}
+可以先求牛顿点，如果牛顿点在可行域中，则将牛顿点作为子问题的解。
+
+否则，可以认为子问题的解在\textbf{约束的边界上}，即$\lVert \mathrm{s} \lVert =e_k$。含有等式约束的约束，可以用拉格朗日函数法解决。
+
 
 \end{document}

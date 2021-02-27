@@ -1,0 +1,306 @@
+\documentclass[a4paper]{D:/repositories/MyDGP/latex/PaperReadingLog}
+\usepackage{caption}
+\usepackage{overpic}
+\usepackage{float}
+
+\usepackage{enumitem} 
+\usepackage{amsfonts,amssymb,amsmath}
+
+\usepackage{algorithm}%%算法伪代码，支持中文
+\usepackage{algorithmic}
+\setmainfont{Arial}
+
+\begin{document}
+
+\PaperInfo
+{3.二次规划}
+{朱}
+{天宇}
+{}
+
+\section{二次规划}
+二次规划是指等式、不等式约束都是二次的，所求的目标函数也是二次的情景。
+$$
+\begin{aligned}
+    \min\quad Q(\mathrm{x})&=\frac{1}{2}\mathrm{x}^\top\mathrm{G}\mathrm{x}+\mathrm{c}^\top\mathrm{x}\\
+    s.t.\quad \mathrm{a}_i^\top\mathrm{x}&=b_i,\ i\in\mathcal{E}=\{1,2,...m_e\}\\
+    \mathrm{a}_i^\top&\ge b_i,\ i\in\mathcal{I}=\{m_{e+1},...m\}
+\end{aligned}
+$$
+
+这里要求$\mathrm{G}$是对称阵、$\mathrm{a}_i(i\in\mathcal{E})$是线性无关的。
+
+\subsection{分类}
+\begin{enumerate}
+    \item 如果约束是不相容的，则可能没有有限的最小值， 此时二次规划无解；
+    \item 如果矩阵$\mathrm{G}$是半正定的，则问题是一个凸的二次规划问题，其任意局部解也是全局解；
+    \item 如果矩阵$\mathrm{G}$是正定的，则问题是一个正定二次规划问题，只要存在解即是唯一解。
+    \item 如果矩阵$\mathrm{G}$不定，则问题是一般的二次规划问题，有可能有非整体的局部解。
+\end{enumerate}
+
+\paragraph{正定矩阵含义}如果一个$n$阶方阵$\mathrm{M}$，对于任意非零向量$\mathrm{z}$，都有$\mathrm{z}^\top\mathrm{M}\mathrm{z}>0$，则称$\mathrm{G}$为正定矩阵。\key{正定矩阵所有特征值都为正数}。
+
+\paragraph{半正定矩阵含义}如果$\mathrm{z}^\top\mathrm{M}\mathrm{z}\ge0$，则称$\mathrm{G}$为半正定矩阵。半正定矩阵所有特征值\key{非负}。
+
+\paragraph{熟悉上方较为抽象的写法}设$
+\mathrm{x}=\left(\begin{array}[]{c}
+    x_1\\x_2\\x_3
+\end{array}
+\right)
+$，$
+\mathrm{c}=\left(\begin{array}[]{c}
+    1\\2\\3
+\end{array}
+\right)
+$
+
+则根据$\mathrm{G}$的正定、半正定、不定的情况，分别举一个展开的例子。
+
+$\mathrm{G}=\left(\begin{array}[]{ccc}
+        2 & -1 & 0 \\
+        -1 & 2 & -1 \\
+        0 & -1 & 2 \\
+    \end{array}
+    \right)
+    $是正定矩阵，因为$\mathrm{x}^\top\mathrm{G}\mathrm{x}=x_1^2+(x_1-x_2)^2+(x_2-x_3)^2+x_3^2>0$。此时原函数$\mathrm{x}^\top\mathrm{G}\mathrm{x}+\mathrm{c}^\top\mathrm{x}$展开得到
+
+    $$
+    Q=x_1^2+(x_1-x_2)^2+(x_2-x_3)^2+x_3^2+x_1+2x_2+3x_3
+    $$
+
+    对$x_1,x_2,x_3$分别求偏导，就可以解出唯一的值，因此只要存在解就是唯一解。
+
+    $\mathrm{G}=\left(\begin{array}[]{ccc}
+        1 & 0 & 0 \\
+        0 & 2 & 0 \\
+        0 & 0 & 0 \\
+    \end{array}
+    \right)
+    $是半正定矩阵，此时原函数$\mathrm{x}^\top\mathrm{G}\mathrm{x}+\mathrm{c}^\top\mathrm{x}$展开得到
+
+    $$
+    Q=x_1^2+2x_2^2+x_1+2x_2+3x_3
+    $$
+
+    对$x_1,x_2,x_3$分别求偏导，其中$x_1,x_2$是有唯一解的，而$x_3$无解。原函数没有全局最小值($x_3\leftarrow-\infty$)
+
+    当矩阵不定的时候，整体解(无约束的情况下)不一定存在。
+
+\section{仅含等式约束的二次规划}
+$$
+\begin{aligned}
+    \min\quad Q(\mathrm{x})&=\frac{1}{2}\mathrm{x}^\top\mathrm{G}\mathrm{x}+\mathrm{c}^\top\mathrm{x}\\
+    s.t.\quad \mathrm{A}\mathrm{x}&=\mathrm{b}
+\end{aligned}
+$$
+
+在这里，$\mathrm{A}$是一个$m\times n,m<n$的矩阵。不失一般性，设$rank(\mathrm{A})=m$，此时$\mathrm{A}$是行满秩的，因此可行域非空。
+
+\subsection{基于消去法的两种方法}
+\subsection{Lagrange方法}
+拉格朗日方法基于求解可行域内的(K-T)点，即拉格朗日函数的稳定点。拉格朗日函数的稳定点是如下线性方程组的解：
+$$\left\{
+    \begin{aligned}
+        \mathrm{G}\mathrm{x}+\mathrm{c}&=\mathrm{A}^\top\lambda\\
+        \mathrm{A}\mathrm{x}&=\mathrm{b}
+    \end{aligned}
+    \right.
+$$
+
+写成矩阵形式：
+$$
+\left(
+    \begin{array}[]{cc}
+        \mathrm{G} & -\mathrm{A}^\top \\
+        -\mathrm{A} & 0        
+    \end{array}
+\right)
+\left(
+    \begin{array}[]{c}
+        \mathrm{x} \\ \lambda
+    \end{array}
+\right)
+=
+-\left(\begin{array}[]{c}
+    \mathrm{c} \\ \mathrm{b}
+\end{array}
+\right)
+$$
+
+这是一个更高维的线性方程组，可以强行求解但是没有必要。基于左侧矩阵的特殊结构，可以通过矩阵分解的方式来获得解。
+
+设$
+\left(
+    \begin{array}[]{cc}
+        \mathrm{G} & -\mathrm{A}^\top \\
+        -\mathrm{A} & 0        
+    \end{array}
+\right)$的逆矩阵为$
+\left(
+    \begin{array}[]{cc}
+        \mathrm{U} & \mathrm{W}^\top \\
+        \mathrm{W} & \mathrm{V}        
+    \end{array}
+\right)$
+
+从而可以获得问题的唯一解为
+$$
+\left\{\begin{aligned}
+    \mathrm{x}^\star&=-\mathrm{U}\mathrm{c}-\mathrm{W}^\top\mathrm{b}\\
+    \lambda^\star&=-\mathrm{W}\mathrm{c}-\mathrm{V}\mathrm{b}
+\end{aligned}
+\right.
+$$
+
+从而可以计算出$\mathrm{U},\mathrm{V},\mathrm{W}$的表示，如图。但这样的表示需要计算$\mathrm{G}^{-1}$，这个计算代价和直接计算增广的线性方程组没啥区别。因此要用\key{矩阵分解}的方法。
+
+\begin{figure}[H]%
+    \centering
+    \begin{overpic}[width=0.5\linewidth]{fig/3.1.png}
+    \end{overpic}
+    \caption{可以，但没必要。}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+
+取$\mathrm{Y},\mathrm{Z}$满足$(\mathrm{Y},\mathrm{Z})=\left(\begin{array}[]{c}\mathrm{A}\\\mathrm{B}    
+\end{array}
+\right)^{-1}$，其中$\mathrm{Y}$是矩阵\key{商空间}的一组基构成的矩阵；$\mathrm{Z}$是解空间的基构成的矩阵；即$\mathrm{A}\mathrm{Y}=\mathrm{I}_{m\times m},\mathrm{A}\mathrm{Z}=0$。这里$\mathrm{A}$是$m\times n$的，$\mathrm{Y}$是$n\times m$的。此时有
+$$
+\left\{\begin{aligned}
+    \mathrm{U}&=\mathrm{Z}(\mathrm{Z}^\top\mathrm{G}\mathrm{Z})^{-1}\mathrm{Z}^\top\\
+    \mathrm{V}&=-\mathrm{Y}^\top\mathrm{G}\mathrm{P}^\top\mathrm{Y}\\
+    \mathrm{W}&=-\mathrm{Y}^\top\mathrm{P}
+\end{aligned}
+    \right.
+$$
+
+这里$\mathrm{P}=\mathrm{I}-\mathrm{G}\mathrm{Z}(\mathrm{Z}^\top\mathrm{G}\mathrm{Z})^{-1}\mathrm{Z}^\top$。
+
+这里$\mathrm{B}$取值我们不关心。所以就需要\key{根据矩阵$\mathrm{A}_{m\times n}$，确定$\mathrm{Y}_{n\times m},\mathrm{Z}$使得$\mathrm{A}\mathrm{Y}=\mathrm{I}$以及$\mathrm{A}\mathrm{Z}=0$}。
+
+通过对$\mathrm{A}$做\key{QR分解}可以获得一组特殊的$\mathrm{Y},\mathrm{Z}$取值。
+
+$Q$是一个$n\times n$的正交阵；$R$是一个$m\times m$的上三角阵；
+
+设置$\mathrm{A}^\top=\mathrm{Q}\left(\begin{array}[]{c}
+    \mathrm{R} \\ 0
+\end{array}
+\right)=(\mathrm{Q}_1,\mathrm{Q}_2)\left(\begin{array}[]{c}
+    \mathrm{R} \\ 0
+\end{array}
+\right)$，从而有
+$$
+\mathrm{A}=(\mathrm{R}^\top,0)\left(
+    \begin{array}[]{c}
+        \mathrm{Q}_1^\top\\\mathrm{Q}_2^\top
+    \end{array}
+\right)
+$$
+
+维度分别为$\mathrm{Q}_{n\times n},\mathrm{R}_{m\times m}$，维度不足则补0。
+
+可以令$\mathrm{Y}=\mathrm{Q}_1\mathrm{R}^{-\top},\mathrm{Z}=\mathrm{Q}_2$。
+
+从而求出$\mathrm{U},\mathrm{V},\mathrm{W}$，进而求出$\mathrm{x}$。
+
+\section{包含不等式约束的二次规划}
+
+$$
+\begin{aligned}
+    \min\quad Q(\mathrm{x})&=\frac{1}{2}\mathrm{x}^\top\mathrm{G}\mathrm{x}+\mathrm{c}^\top\mathrm{x}\\
+    s.t.\quad \mathrm{a}_i^\top\mathrm{x}&=b_i,\ i\in\mathcal{E}=\{1,2,...m_e\}\\
+    \mathrm{a}_i^\top&\ge b_i,\ i\in\mathcal{I}=\{m_{e+1},...m\}
+\end{aligned}
+$$
+
+\paragraph{active set}根据函数的连续性，\key{直观上，不积极的不等式约束在解的附近不起作用，可以去掉不予考虑；而积极的不等式约束，由于在解处等号成立，故而可以用等式约束来替代不等式约束。}从而转化成等式约束。
+
+需要设法判断积极约束和不积极约束。
+
+\subsection{积极集基本定理}
+
+定义记号$\mathcal{I}(\mathrm{x}^k)=\{i\in\mathcal{I}|\mathrm{a}_i^\top\mathrm{x}^k=b_i\}$。这个记号是依赖于$\mathrm{x}^k$的，表示在不等式约束构成的集合$\mathcal{I}$中，在$\mathrm{x}^k$点处，使得约束$\mathrm{a}_i^\top\mathrm{x}^k=b_i$等号成立的这些约束。称这些约束在$\mathrm{x}^k$点处是积极的。
+
+\paragraph{定理} 设$\mathrm{x}^\star$是一般的二次规划问题(包含所有等式和不等式约束)的局部极小点。则$\mathrm{x}^\star$也必然是等式约束问题
+$$
+(EQ)\left\{\begin{aligned}
+    \min\quad Q(\mathrm{x})&=\frac{1}{2}\mathrm{x}^\top \mathrm{G}\mathrm{x}+\mathrm{c}^\top \mathrm{x}\\
+    s.t.\quad \mathrm{a}_i^\top\mathrm{x}&=b_i,\ i\in\mathcal{E}\cup\mathcal{I}(\mathrm{x}^\star)
+\end{aligned}
+\right.
+$$
+
+的局部极小点。这个公式中$i$表示第$i$个不等式约束。反之，如果$\mathrm{x}^\star$是一般问题的可行点，同时是问题$(EQ)$的K-T点，且相应的拉格朗日乘子满足$\lambda^\star_i\ge 0,i\in\mathcal{I}^\star$，那么$\mathrm{x}^\star$必然是原问题的K-T点。
+
+也就是说问题$(EQ)$的K-T点同时还是原问题的可行点，且不等式约束的拉格朗日乘子都大于等于0，那么$\mathrm{x}^\star$就是原问题的K-T点。
+
+因此，记$\mathcal{E}_k=\mathcal{E}\cup\mathcal{I}(\mathrm{x}^k)$，尝试求解这个含等式约束的二次规划问题$EQ1$：
+$$
+(EQ1)\left\{\begin{aligned}
+    \min\quad &\frac{1}{2}\mathrm{s}^\top \mathrm{G}\mathrm{s}+(\mathrm{G}\mathrm{x}^k+\mathrm{c})^\top \mathrm{s}\\
+    s.t.\quad &\mathrm{a}_i^\top\mathrm{s}=0,\ i\in\mathcal{E}_k
+\end{aligned}
+\right.
+$$
+
+也就是使用\textbf{当前迭代点}$\mathrm{x}^k$对应的积极的不等式约束来替代局部极小点$\mathrm{x}^\star$对应的积极的不等式约束。
+
+在这里，$\mathrm{s}=\mathrm{x}-\mathrm{x}^k$。结果的$\mathrm{s}$分为3种情况：
+\begin{enumerate}
+    \item $\mathrm{s}^k\neq 0$，此时$\mathrm{x}^k$不是原问题的K-T点；
+    \item $\mathrm{s}^k=0$，则$\mathrm{x}^k$是问题
+    $$
+    (EQ2)\left\{\begin{aligned}
+        \min\quad &\frac{1}{2}\mathrm{x}^\top \mathrm{G}\mathrm{x}+\mathrm{c}^\top \mathrm{x}\\
+        s.t.\quad &\mathrm{a}_i^\top\mathrm{x}=b_i,\ i\in\mathcal{E}_k
+    \end{aligned}
+    \right.
+    $$
+    的K-T点。如果$\lambda_i^k\ge 0,i\in\mathcal{I}(\mathrm{x}^k)$，则$\mathrm{x}^k$也是原问题的K-T点。
+    \item 否则，选择不等式条件$i_q$使得$\lambda_{i_q}^k=\min_{i\in\mathcal{I}(\mathrm{x}^k)}\lambda_i^k<0$，此时，解要满足的约束太多，需要释放掉一些。求如下问题
+    $$
+    (EQ3)\left\{\begin{aligned}
+        \min\quad &\frac{1}{2}\mathrm{s}^\top \mathrm{G}\mathrm{s}+(\mathrm{G}\mathrm{x}^k+\mathrm{c})^\top \mathrm{s}\\
+        s.t.\quad &\mathrm{a}_i^\top\mathrm{s}=0,\ i\in\mathcal{E}_k\verb|\|{i_q}
+    \end{aligned}
+    \right.
+    $$
+    的解$\hat{\mathrm{s}}$，作为当前点$\mathrm{x}^k$处的可行方向。即$\mathrm{a}_{i_q}^\top \hat{\mathrm{s}}\ge 0$。
+\end{enumerate}
+
+
+\subsection{二次规划的积极集方法}
+\begin{algorithm}[H]
+	\caption{积极集方法} 
+	\begin{algorithmic}[1]
+		% 初始化
+		\STATE 初始化：给定可行点$\mathrm{x}^0$，令$\mathcal{E}_0\leftarrow\mathcal{E}\cup\mathcal{I}(\mathrm{x}^0),k\leftarrow 0$
+        \WHILE{true}
+            \STATE 求解等式约束问题(EQ1)，获得下降方向$\mathrm{s}^k$
+            \IF{$\mathrm{s}^k=0$}
+                \IF{$\lambda_i^k\ge 0,i\in\mathcal{I}(\mathrm{x}^k)$}
+                    \STATE \key{算法停止}
+                \ELSE
+                    \STATE 选择不等式约束$i_q$，满足$\lambda_{i_q}^k=\min_{i\in\mathcal{I}(\mathrm{x}^k)}\lambda_i^k<0$
+                    \STATE $\mathcal{E}_k\leftarrow\mathcal{E}_k\verb|\|{i_q},\mathrm{x}^{k+1}\leftarrow \mathrm{x}^k$
+                \ENDIF
+            \ELSE
+                \STATE 确定步长$\alpha_k\leftarrow\min\{1,\min_{i\in\mathcal{E}_k,\mathrm{a}_i^\top \mathrm{s}^k<0}\frac{b_i-\mathrm{a}^\top_i\mathrm{x}^k}{\mathrm{a}_i^\top\mathrm{s}^k}\}$
+                \STATE $\mathrm{x}^{k+1}\leftarrow \mathrm{x}^k+\alpha_k\mathrm{s}^k$
+                \IF[从不积极的约束中选择可以添加的积极约束]{$\alpha_k\neq 1$}
+                    \STATE 寻找$p\notin\mathcal{E}_k$，满足$\mathrm{a}_p^\top(\mathrm{x}^k+\alpha_k\mathrm{s}^k)=b_p$
+                    \STATE $\mathcal{E}_k\leftarrow \mathcal{E}_k\cup\{p\}$
+                \ENDIF
+            \ENDIF
+            \STATE $\mathcal{E}_{k+1}\leftarrow \mathcal{E}_k,k\leftarrow k+1$
+        \ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
+
+第14行是考虑不在非积极约束，决定步长的时候要考虑这些约束。步长移动可能导致原本的不积极约束变成了积极约束，也有可能使得可行解变成不可行解。通过等式约束决定方向、通过不等式约束决定步长，这是在多个问题中会用到的思想。
+
+\subsection{二次规划的基于凸优化的方法}
+如果满足$\mathrm{G}$是半正定的，则可以根据凸优化的相关方法来获取二次规划问题的解。
+
+\end{document}
