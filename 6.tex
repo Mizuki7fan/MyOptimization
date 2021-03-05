@@ -1,0 +1,44 @@
+\documentclass[a4paper]{D:/MyRepo/Script/latex/PaperReadingLog}
+\usepackage{caption}
+\usepackage{overpic}
+\usepackage{float}
+
+\usepackage{enumitem} 
+\usepackage{amsfonts,amssymb,amsmath}
+
+\usepackage{algorithm}%%算法伪代码，支持中文
+\usepackage{algorithmic}
+\setmainfont{Arial}
+
+\begin{document}
+
+\PaperInfo
+{6.凸优化}
+{朱}
+{天宇}
+{}
+
+\section{问题建模}
+凸优化问题一般要解决
+\begin{equation}
+    \label{equ:1}
+    \begin{aligned}
+        \min\quad&f_0(\mathrm{x})\\
+        s.t.\quad&f_i(\mathrm{x})\le0,\quad i=1,...m\\
+        &h_j(\mathrm{x})=0,\quad j=1,...p
+    \end{aligned}
+\end{equation}
+这其中，\begin{enumerate}
+    \item $\mathrm{x}\in\mathbb{R}^n$,是优化变量
+    \item $f_0:\mathbb{R}^n\rightarrow \mathbb{R}$，被称为目标函数，或者是cost function
+    \item $f_i(\mathrm{x})\le0$，不等式约束
+    \item $f_i:\mathbb{R}^n\rightarrow \mathbb{R}$，被称为不等式约束函数
+    \item $h_j(\mathrm{x})=0$，等式约束
+    \item $h_j:\mathbb{R}^n\rightarrow \mathbb{R}$，被称为等式约束函数
+\end{enumerate}
+
+\paragraph{可行域、可行点}
+可行域就是所有约束的可行域的交集；如果可行域$\mathcal{D}$非空，则称\ref{equ:1}为可行的(feasible)。
+
+
+\end{document}

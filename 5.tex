@@ -1,0 +1,221 @@
+\documentclass[a4paper]{D:/MyRepo/Script/latex/PaperReadingLog}
+\usepackage{caption}
+\usepackage{overpic}
+\usepackage{float}
+
+\usepackage{enumitem} 
+\usepackage{amsfonts,amssymb,amsmath}
+
+\usepackage{algorithm}%%算法伪代码，支持中文
+\usepackage{algorithmic}
+\setmainfont{Arial}
+
+\begin{document}
+
+\PaperInfo
+{5.凸优化问题的定义}
+{朱}
+{天宇}
+{}
+
+\section{凸的定义}
+\subsection{仿射集Affine set}
+如果一个集合的任意两个元素的线性组合都在这个集合内，称这个集合为仿射集\footnote{https://blog.csdn.net/robert\_chen1988/article/details/80048245}，即对于集合C，有：
+$$
+\forall x,y\in C,\theta\in\mathbb{R}, \rightarrow \theta x+(1-\theta) y\in C
+$$
+
+这个定义很容易推广到多个元素的情况，即
+$$
+\forall x_1,x_2,...,x_n\in C,\theta_1,\theta_2,..,\theta_n\in\mathbb{R},\rightarrow \theta_1 x_1+\theta_2 x_2+...+\theta_n x_n\in C
+$$
+
+其中$\theta_1+...+\theta_n=1$。$\theta_1 x_1+\theta_2 x_2+...+\theta_n x_n$被称为仿射组合
+
+\subsection{子空间}
+对于一个仿射集$ C$以及其内部任意一点$x_0$，定义集合$\mathrm{V}$
+$$
+V= C-x_0=\{x-x_0|x\in C\}
+$$
+
+这里$\mathrm{V}$是一个子空间。(满足性质：零向量属于子空间，子空间任意两个向量的加和，单向量与标量的乘积也在子空间里)，仿射空间是子空间的一个\key{平移}。
+
+对于矩阵$\mathrm{A}\in\mathbb{R}^{m\times n},b\in\mathbb{R}^n$，其解集$C=\{x|\mathrm{A}x=b\}$是一个仿射集。令集合$V=\{v|\mathrm{A}v=0\}$是一个子空间，并且有$\mathrm{A}x_0=b$，那么就有$C=V+x_0$。
+
+\paragraph{举例}
+考虑方程组$x_1+2x_2=3$，其含有解$x_1=-1,x_2=2$以及$x_1=1,x_2=1$，那么这两个解的线性组合也是原方程组的解。比如$x_1=0.8*-1+0.2*1=-0.6,x_2=0.8*2+0.2*1=1.8$也是方程的解。其齐次形式$x_1+2x_2=0$的任意解，比如$x_1=-2,x_2=1$加上一个特解$x_1=1,x_2=1$，也是原方程的解。
+
+\subsection{仿射包affine hull}
+一个集合C内所有点的仿射组合，被称为仿射包
+$$
+\mathrm{aff}C=\{\theta_1x_1+...+\theta_kx_k|x_1,...,x_k\in C,\theta_1+...+\theta_k=1\}
+$$
+
+仿射包$\mathrm{aff}C$是包含集合$C$中所有元素的最小的仿射集。
+
+\subsection{凸集convex set}
+对于集合C，如果有：
+$$
+\forall x,y\in C,\theta\in\mathbb{R},\theta>0 \rightarrow \theta x+(1-\theta) y\in C
+$$
+
+对比仿射集的定义，凸集要求系数$\theta>0$。同样可以推广到任意个点的情况。同样，仿射组合也对应``凸组合"
+
+\subsection{凸包convex hull}
+类似的定义，集合C的凸包，记为$\mathrm{conv}C$，是包含集合C中所有元素的凸组合的集合，是包含集合C的所有元素的最小的凸集：
+$$
+\mathrm{conv}C=\{\theta_1x_1+...+\theta_kx_k|x_i\in C,\theta_i\ge0,i=1...k,\theta_1+...+\theta_k=1\}
+$$
+
+\subsection{锥cone}
+一个集合C被称为锥，如果对于$\forall x\in C,\theta\ge 0\rightarrow \theta x\in C$
+
+一个集合C被称为\key{凸锥}，如果对于$\forall x_1,x_2\in C,\theta_1,\theta_2\ge 0,\rightarrow \theta_1 x_1+\theta_2 x_2\in C$
+
+锥组合：$\theta_1 x_1+...+\theta_k x_k,\theta_1,...,\theta_k\ge 0$。
+
+锥包(conic hull): $\{\theta_1 x_1+...+\theta_kx_k|x_i\in C,\theta_i\ge0\}$
+
+下图分别展示了一组离散点的锥包和一个非凸形状的锥包。
+
+\begin{figure}[H]%
+    \centering
+    \begin{overpic}[width=0.6\linewidth]{fig/5.1.png}
+    \end{overpic}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+
+值得注意的是两个图中都绘制了一个原点。
+
+\subsection{一些例子和应用}
+\paragraph{超平面}一个超平面是满足$\{\mathrm{x}|a^\top \mathrm{x}=b\}$的集合，是一个凸集。
+\paragraph{半空间}半空间是满足$\{\mathrm{x}|a^\top \mathrm{x}\le b\}$的集合，也是一个凸集。
+\paragraph{多面体Polyhedra}一个多面体被定义为一组有限的线性等式与不等式的解。当然是凸的。
+$$
+\mathcal{P}=\{\mathrm{x}|a_j^\top \mathrm{x}\le b_j,j=1,...,m,c_k^\top \mathrm{x}=d_k,k=1,...,p\}
+$$
+
+\paragraph{球Ball}$B(\mathrm{x}_c,r)=\{\mathrm{x}|\lVert \mathrm{x}-\mathrm{x}_c \lVert_2\le r\}$ 这里半径大于0，范数也可以不是2。但不可以小于1，小于1无法满足范数的定义所满足的性质(三角不等式约束)。
+
+\paragraph{范式球与范式锥}\footnote{https://blog.csdn.net/robert\_chen1988/article/details/80479813}
+
+球心和半径都确定的范式球的定义为$\{\mathrm{x}|\lVert \mathrm{x}-\mathrm{x}_c \lVert\le r\}$
+
+同样，定义范式锥：$C=\{(\mathrm{x},t)|\lVert \mathrm{x} \lVert \le t\}$
+
+值得注意的是，范式锥比范式球高一维——范式锥的$r$也是维度之一。
+
+如果在矩阵空间中定义，则有一些其他的凸结构例子：
+\paragraph{半正定锥} \footnote{https://www.bilibili.com/read/cv4665074}
+对称矩阵$\mathrm{S}^n$,半正定对称矩阵$\mathrm{S}_+^n$，正定对称矩阵$\mathrm{S}_{++}^n$都是凸的。（详见参考链接）
+
+\subsection{正常锥proper cone以及广义不等性}
+\paragraph{定义} 正常锥可以用于对锥中的元素定义一个偏序的关系。一个正常锥$K$是满足如下几个条件的锥：
+\begin{enumerate}
+    \item 凸的
+    \item 闭的，即包含边界
+    \item 非空的(solid)，即具有非空内部。
+    \item 定向的(pointed)，含义是，锥的内部不能含有直线，例如：$x\in K and -x\in K\Rightarrow x=0$也就是说除非$x$就是原点，否则$x$与$-x$不能同时在集合内部。
+\end{enumerate}
+
+根据这个定义，就可以定义一个集合内部的偏序关系。在$\mathbb{R}^n$中的偏序拥有在$\mathbb{R}$中的有序的许多性质。
+$$
+\begin{aligned}
+    x\preceq_K y \Leftrightarrow y-x\in K\\
+    x\prec_K y\Leftrightarrow y-x\in \mathrm{int}K
+\end{aligned}
+$$
+
+在$K=\mathbb{R}_+$的时候(也就是正的数轴)，$\preceq_K$和$\le$是相同含义；
+
+\paragraph{举例}
+\begin{enumerate}
+    \item n维的非负象限(orthant)$K=\mathbb{R}_+^n$是一个正常锥。此时$\mathrm{x}\preceq_K \mathrm{y}$的含义就是$\mathrm{x}$的每一个分量都小于$\mathrm{y}$，即$x_i<y_i,i=1...n$。
+    \item 在由所有的$n$维对称矩阵构成的空间$\mathrm{S}^n$中，半正定锥$\mathrm{S}_+^n$是一个正常锥。此时$\mathrm{X}\preceq_K\mathrm{Y}$的含义是$\mathrm{X}-\mathrm{Y}$是半正定的。由于经常使用，对于半正定矩阵，可以忽略广义不等$\preceq_K$的下标。$\mathrm{X}\preceq\mathrm{Y}$就可以直接表示一种偏序关系。
+    \item 在$[0,1]$区间上的非负多项式，也就是
+    $$
+    K=\{\mathrm{c}\in\mathbb{R}^n|c_1+c_2t+c_3t^2+...+c_nt^{n-1},t\in[0,1]\}
+    $$此时对于两个向量$\mathrm{c},\mathrm{d},\mathrm{c}\preceq\mathrm{d}$当且仅当$c_1+c_2t+...+c_nt^{n-1}\le d_1+d_2t+...+d_nt^{n-1}$
+\end{enumerate}
+
+\subsection{极小元和最小元}
+广义不等$\preceq$是不等$\le$的类比。有些属性是可以类比的，但有些属性不能类比。最常见的就是，在$\mathbb{R}$中，任意两个元素都是\key{可比}的。因此，在广义不等中，极小和最小的定义就变得复杂。
+
+\paragraph{最小元minimum} 称$\mathrm{x}$是$S$中的最小元，如果$\forall \mathrm{y}\in S\Rightarrow \mathrm{x}\preceq_K \mathrm{y}$，显然，最小元是唯一的。使用\textbf{集合符号}来描述的话，就是：$\mathrm{x}\in S$是最小元当且仅当$S\subseteq \mathrm{x}+K$。
+
+\paragraph{极小元minimal} 称$\mathrm{x}$是$S$中的极小元，如果$\mathrm{y}\preceq\mathrm{y} \Rightarrow \mathrm{y}=\mathrm{x}$。也就是说，如果$\mathrm{x},\mathrm{y}$可比，那么一定有$\mathrm{x}\preceq\mathrm{y}$。用集合符号描述就是：$\mathrm{x}\in S$是极小元当且仅当$(\mathrm{x}-K)\cap S=\{\mathrm{x}\}$。
+
+\begin{figure}[H]%
+    \centering
+    \begin{overpic}[width=0.75\linewidth]{fig/5.2.png}
+    \end{overpic}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+
+\section{凸函数 convex funtion}
+\subsection{定义}
+函数是一个$\mathbb{R}^n \rightarrow \mathbb{R}$的一个映射。如果这个映射是凸的，当且仅当
+$$
+f(\theta x+(1-\theta)y)\le \theta f(x)+(1-\theta)f(y)
+$$
+
+也就是凸组合的函数值小于等于函数值的凸组合。严格凸就是当$x\neq y$的时候，$\le \Rightarrow <$
+
+\begin{figure}[H]%
+    \centering
+    \begin{overpic}[width=0.5\linewidth]{fig/5.3.png}
+    \end{overpic}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+
+\paragraph{梯度(一阶导)定义}充要条件：$f(y)\ge f(x)+\nabla f(x)^\top (y-x)$，表示沿着任意一点做切线，函数图像都在切线的上方。
+
+\paragraph{二阶导定义} 充要条件：$\nabla^2 f(x)\succeq 0$，也就是Hessian矩阵是半正定的。但值得注意的是，Hessian正定可以推出严格凸，但反之，严格凸无法推导出Hessian正定。比如$f(x)=x^4$，其Hessian在$x=0$处等于0。（但也满足半正定的要求）。
+
+和前述最优性条件的区分：最优性条件是在特定的点处的性质，且满足二阶最优性条件的前提是满足一阶最优性条件；而凸性的一阶二阶条件是在整个函数上的性质。
+
+\subsection{常见的凸函数}
+\begin{enumerate}
+    \item 指数函数$e^{ax}$，在$\mathbb{R}$上。
+    \item 幂函数$x^a$，在$\mathbb{R}_{++}$上，也就是要求$x$是正数；当$a\ge 1\  or\ a\le0$的时候是凸的，在$[0,1]$上是凹的。
+    \item 绝对值的幂函数$\lvert x \lvert^p,p\ge 1$在$\mathbb{R}$上是凸的
+    \item 对数函数在$\mathbb{R}_{++}$上是凸的
+    \item 熵函数也是凸的$x\log(x)$，但要注意定义域。(约定$0\log(0)=0$)
+    \item 范数是凸的。
+    \item 最大值函数$f(\mathrm{x})=\max(x_1,x_2,...,x_n)$是凸函数。这个函数无法求导，但是可以从定义角度来证明。
+    \item 指数求和函数$f(\mathrm{x})=\log(e^{x_1}+e^{x_2}+...+e^{x_n})$是凸的。这个函数满足
+    $$
+    \max\{x_1,...,x_n\}\le f(\mathrm{x})\le \max\{x_1,...,x_n\}+\log(n)
+    $$
+    \item 几何平均$f(\mathrm{x})=(\prod_{i=1}^n)^{1/n}$是\key{凹}的。
+    \item 行列式的对数函数$f(\mathrm{X})=\log\det(\mathrm{x})$是凸的。
+\end{enumerate}
+
+\subsection{常见的凸函数算子}
+以下介绍一些常见的可以使得函数保持凸性的函数算子。
+\begin{enumerate}
+    \item 非负的加权和 $f=w_1f_1+...+w_mf_m,w_1,...,w_m\ge 0$
+    \item 推广到无限项相加的情况，即为积分：如果对于$\forall y\in\mathcal{A}$，都有$f(x,y)$是凸的，且$w(y)\ge 0$,那么函数
+    $$
+    g(x)=\int_{\mathcal{A}}w(y)f(x,y)\mathrm{d}y
+    $$
+    关于$x$也是凸的。
+    \item 和仿射变换组合：$f:\mathbb{R}^n\mapsto \mathbb{R},A\in\mathbb{R}^{n\times m},b\in \mathbb{R}^n,g:\mathbb{R}^m\mapsto\mathbb{R}$，那么有
+    $$
+    g(x)=f(\mathrm{A}x+b)
+    $$
+    如果$f$是凸的，那么$g$也是凸的。
+    \item 分片最大值：$f(x)=\max\{f_1(x),f_2(x)\}$，如果$f_1,f_2$都是凸的，那么$f$也是凸的。
+    \item 分片上确界：如果对于$\forall y\in\mathcal{A}$，都有$f(x,y)$是凸的，那么有
+    $$
+    g(x)=\sup_{y\in\mathcal{A}}f(x,y)
+    $$
+    也是凸的。(当然要满足定义域存在、上确界存在等等条件。)
+    \item Quasi-convex\key{拟凸函数} $S_\alpha=\{x\in\mathrm{dom}f|f(x)\le\alpha\}$也是凸的(水平集)。拟凸函数：如果一个函数本身不是凸的，但是其水平集都是凸的，则称其为拟凸函数。\footnote{https://zhuanlan.zhihu.com/p/131604034}
+    \item 对数凹函数：如果函数$f$满足$f(x)>0,\forall x\in\mathrm{dom}f$，且$\log f$是凹的，那么这就是一个对数凹函数。也就是说对于函数本身不要求是凹的，但是其对数是凹的，那么这种类型就是对数凹函数。
+\end{enumerate}
+
+\end{document}
