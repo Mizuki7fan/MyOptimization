@@ -13,32 +13,249 @@
 \begin{document}
 
 \PaperInfo
-{6.凸优化}
+{6.凸问题和KKT条件}
 {朱}
 {天宇}
 {}
 
-\section{问题建模}
+\section{凸问题建模和性质}
 凸优化问题一般要解决
 \begin{equation}
     \label{equ:1}
     \begin{aligned}
         \min\quad&f_0(\mathrm{x})\\
         s.t.\quad&f_i(\mathrm{x})\le0,\quad i=1,...m\\
-        &h_j(\mathrm{x})=0,\quad j=1,...p
+        &a_j^\top \mathrm{x}=0,\quad j=1,...p
     \end{aligned}
 \end{equation}
+
 这其中，\begin{enumerate}
     \item $\mathrm{x}\in\mathbb{R}^n$,是优化变量
     \item $f_0:\mathbb{R}^n\rightarrow \mathbb{R}$，被称为目标函数，或者是cost function
     \item $f_i(\mathrm{x})\le0$，不等式约束
     \item $f_i:\mathbb{R}^n\rightarrow \mathbb{R}$，被称为不等式约束函数
-    \item $h_j(\mathrm{x})=0$，等式约束
-    \item $h_j:\mathbb{R}^n\rightarrow \mathbb{R}$，被称为等式约束函数
+    \item $a_j^\top \mathrm{x}=0$，线性等式约束
 \end{enumerate}
 
-\paragraph{可行域、可行点}
-可行域就是所有约束的可行域的交集；如果可行域$\mathcal{D}$非空，则称\ref{equ:1}为可行的(feasible)。
+\paragraph{凸问题的条件} 在\ref{equ:1}中，如果$f_0,f_1,...,f_m$都是凸函数，那么这就是一个凸优化问题。需要注意的是，等式约束\textbf{必须是}线性约束。
 
+\paragraph{可行域、可行点}
+可行域就是所有约束的可行域的交集；如果可行域$\mathcal{D}$非空，则称\ref{equ:1}为可行的(feasible)。在实际问题之前，需要先判定可行域是否非空。
+
+\paragraph{最优值 $v^\star$ 最优解 $\mathrm{x}^\star$}  在可行域中，使得$f_0(\mathrm{x})$的下确界所对应的值。如果问题是不可行的，则$v^\star=\infty$。最优值是一个下确界，不能保证最优解存在。$f_0(\mathrm{x}^\star)=v^\star$。局部最优的定义和之前的也是相似的。凸优化问题的任意局部最优解也是全局最优解。
+
+\subsection{一阶最优性条件}
+如果目标$f_0$是可微的，那么点$\mathrm{x}$是最优解，\key{当且仅当}对于任意定义域的点$\mathrm{y}$,满足
+$$\nabla f_0(\mathrm{x})^\top (\mathrm{y}-\mathrm{x})\ge 0$$。
+
+对于无约束的情况，这个条件退化为
+$$
+\nabla f_0(\mathrm{x})=0
+$$
+
+对于\textbf{仅包括等式约束}的情况，问题可以写成：
+$$
+\begin{aligned}
+    \min\quad&f_0(\mathrm{x})\\
+    s.t.\quad&\mathrm{A}\mathrm{x}=b
+\end{aligned}
+$$
+
+此时最优性条件可以写成
+$$
+\nabla f_0(\mathrm{x})^\top \mathrm{u}\ge 0,\forall \mathrm{u}\in\mathcal{N}(\mathrm{A})
+$$
+
+这里$\mathcal{N}(\mathrm{A})$表示矩阵的零空间，也就是使得$\mathrm{A}\mathrm{x}=0$的解空间。仅包含等式约束的凸优化问题的解与等式约束的零空间正交。
+
+\key{相对于一般的优化问题，一阶最优性条件仅仅是充分条件，而对于凸优化，一阶最优性条件是充要条件。\footnote{https://www.zhihu.com/question/24641575/answer/507237591}}
+
+\section{具体的凸优化问题}
+\subsection{线性规划(LP)}
+\begin{equation}
+    \label{equ:2}
+    \begin{aligned}
+        \min\quad&\mathrm{q}^\top \mathrm{x}+\mathrm{r}\\
+        s.t.\quad&\mathrm{G}\mathrm{x}\le \mathrm{h}\\
+        &\mathrm{A}\mathrm{x}=\mathrm{b}
+    \end{aligned}
+\end{equation}
+线性规划问题的目标函数和约束都是线性的。通常在目标函数的$r$可以忽略。其求解的基本思想给其他凸优化问题很多启发。
+
+\subsection{二次规划(QP)}
+\begin{equation}
+    \label{equ:3}
+    \begin{aligned}
+        \min\quad&\frac{1}{2}\mathrm{x}^\top\mathrm{P}\mathrm{x}+\mathrm{q}^\top\mathrm{x}+\mathrm{r}\\
+        s.t.\quad&\mathrm{G}\mathrm{x}\le \mathrm{h}\\
+        &\mathrm{A}\mathrm{x}=\mathrm{b}
+    \end{aligned}
+\end{equation}
+
+\subsection{二次约束的二次规划(QCQP)}
+\begin{equation}
+    \label{equ:3}
+    \begin{aligned}
+        \min\quad&\frac{1}{2}\mathrm{x}^\top\mathrm{P}_0\mathrm{x}+\mathrm{q}_0^\top\mathrm{x}+\mathrm{r}_0\\
+        s.t.\quad&\frac{1}{2}\mathrm{x}^\top\mathrm{P}_i\mathrm{x}+\mathrm{q}_i^\top\mathrm{x}+\mathrm{r}_i\le0,i=1,...,m\\
+        &\mathrm{A}\mathrm{x}=\mathrm{b}
+    \end{aligned}
+\end{equation}
+
+\subsection{二阶锥规划(SOCP)}
+\begin{equation}
+    \label{equ:4}
+    \begin{aligned}
+        \min\quad&f^\top \mathrm{x}\\
+        s.t.\quad&\lVert \mathrm{L}_i\mathrm{x}+\mathrm{g}_i\lVert_2\le \mathrm{c}_i^\top\mathrm{x}+\mathrm{d}_i,i=1,...,m\\
+        &\mathrm{A}\mathrm{x}=\mathrm{b}
+    \end{aligned}
+\end{equation}
+
+``二阶锥''体现在其约束上。二阶锥规划的目标函数是\textbf{线性}的。
+
+在$\mathrm{c}_i=0$的时候，SOCP是QCQP的一个特殊情形。但实际上，SOCP有更好的模型化能力，也就是说更加``广义''，任意的QCQP都可以被归纳为一种SOCP的特殊情况。
+
+\subsection{QCQP转为SOCP}
+引入辅助变量$\mathrm{y}$,使得$\frac{1}{2}\mathrm{x}^\top\mathrm{P}_0\mathrm{x}+\mathrm{q}_0^\top\mathrm{x}+\mathrm{r}_0\le\mathrm{y}$，那么QCQP问题\ref{equ:3}就可以写成
+\begin{equation}
+    \label{equ:5}
+    \begin{aligned}
+        \min_{\mathrm{x},\mathrm{y}}\quad&\mathrm{y}\\
+        % \min\quad&\frac{1}{2}\mathrm{x}^\top\mathrm{P}_0\mathrm{x}+\mathrm{q}_0^\top\mathrm{x}+\mathrm{r}_0\\
+        s.t.\quad&\frac{1}{2}\mathrm{x}^\top\mathrm{P}_i\mathrm{x}+\mathrm{q}_i^\top\mathrm{x}+\mathrm{r}_i\le0,i=1,...,m\\
+        &\frac{1}{2}\mathrm{x}^\top\mathrm{P}_0\mathrm{x}+\mathrm{q}_0^\top\mathrm{x}-\mathrm{y}+\mathrm{r}_0\le0\\
+        &\mathrm{A}\mathrm{x}=\mathrm{b}
+    \end{aligned}
+\end{equation}
+
+问题\ref{equ:5}仍然是一个QCQP问题。但是\ref{equ:5}的目标函数已经是一个线性约束了(SOCP的目标函数是线性函数)，接下来需要将约束变成SOCP的形式就可以了。
+
+对于一个二次约束$\frac{1}{2}\mathrm{x}^\top\mathrm{P}\mathrm{x}+\mathrm{q}^\top\mathrm{x}+\mathrm{r}\le0$，由于$\mathrm{P}\in S^n_+$，即是半正定的，故而可以找到一个根$\mathrm{L}$，使得$\mathrm{L}\mathrm{L}=\mathrm{P}$。令
+$$
+\widetilde{\mathrm{L}}=\left[
+    \begin{array}[]{c}
+        \mathrm{L} \\ \mathrm{q}^\top
+    \end{array}
+\right],\quad\widetilde{\mathrm{g}}=\left[
+    \begin{array}[]{c}
+        0 \\ \vdots \\ 0 \\ \mathrm{r}+\frac{1}{2}
+    \end{array}
+\right]\in\mathbb{R}^{n+1}
+$$
+
+这里，$\widetilde{\mathrm{L}}$是一个$(n+1)\times n$的矩阵，$\widetilde{\mathrm{g}}$是一个$n+1$维。
+
+从而有
+$$
+\lVert \widetilde{\mathrm{L}}\mathrm{x}+\widetilde{\mathrm{g}}\lVert_2 \le -(\mathrm{q}^\top \mathrm{x}+\mathrm{r}-\frac{1}{2})
+$$
+
+从而转为了SOCP的形式。
+
+\begin{figure}[H]%
+    \centering
+    \begin{overpic}[width=0.5\linewidth]{fig/6.1.png}
+    \end{overpic}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+
+\section{凸问题的特殊性}
+\subsection{拉格朗日函数 Lagrangian}
+回顾本章开头，凸优化问题的通式\ref{equ:1}
+\begin{equation}
+    \label{equ:6}
+    \begin{aligned}
+        \min\quad&f_0(\mathrm{x})\\
+        s.t.\quad&f_i(\mathrm{x})\le0,\quad i=1,...m\\
+        &h_j(\mathrm{x})=0,\quad j=1,...p
+    \end{aligned}
+\end{equation}
+
+记录符号$\mathcal{D}=\cap^m_{i=0}\mathrm{dom}f_i \cap \cap_{j=1}^p\mathrm{dom}h_j$为问题的定义域。也就是约束的定义域的交集。
+
+定义\key{拉格朗日函数}：
+$$
+L(\mathrm{x},\mathrm{\lambda},\mathrm{\nu})=f_0(\mathrm{x})+\sum_{i=1}^m\lambda_if_i(\mathrm{x})+\sum_{j=1}^p\mathrm{\nu}_jh_j(\mathrm{x})
+$$
+
+函数$L$的定义域为$\mathrm{dom}L=\mathcal{D}\times\mathbb{R}^m\times\mathbb{R}^p$。如果$\mathrm{x}$被固定住，那么$L$关于$\lambda,\nu$是线性的。$\lambda,\nu$被称为拉格朗日乘子，或者叫做\textbf{对偶变量}。
+
+\subsection{拉格朗日对偶函数}
+定义拉格朗日对偶函数$g:\mathbb{R}^m\times\mathbb{R}^p\rightarrow \mathbb{R}$：
+\begin{equation}
+    \label{equ:7}
+    g(\lambda,\nu)=\inf_{\mathrm{x}\in\mathcal{D}} L(\mathrm{x},\lambda,\nu)=\inf_{\mathrm{x}\in\mathcal{D}}(f_0(\mathrm{x})+\sum_{i=1}^m\lambda_if_i(\mathrm{x})+\sum_{j=1}^p\mathrm{\nu}_jh_j(\mathrm{x}))    
+\end{equation}
+
+值得注意的是，对偶函数$g$是在$\mathrm{x}$的整个定义域$\mathcal{D}$中，对$L$取下确界获得的。$\mathcal{D}$是由约束函数的定义域的交集构成，并不要求一定要满足约束。也就是说，可能存在$\mathrm{x}_0\in\mathcal{D}$使得某个$f_i(\mathrm{x})>0$。在取完下确界$\inf$之后，$\mathrm{x}$就被消掉了。
+
+由于拉格朗日对偶函数是关于$\lambda,\nu$线性的，故而其一定是凸的，无论原始问题\ref{equ:6}是不是凸的。
+
+\paragraph{最优值的下界}记$v^\star$是原始问题\ref{equ:6}的最优值(不是最优解，是最优值)，那么对于任意的$\lambda\ge0,\nu$，必然有
+$$
+g(\lambda,\nu)\le v^\star
+$$
+
+这样就为原问题的最优值确定了一个\textbf{下界}。尽管这是一个粗糙的下界，这个下界的取值可能是$-\infty$。为了获得一个\textbf{最好的下界}，就需要解优化问题:
+\begin{equation}
+    \label{equ:8}
+    \begin{aligned}
+        \max\quad&g(\lambda,\nu)\\
+        s.t.\quad&\lambda\ge 0
+    \end{aligned}        
+\end{equation}
+
+这个问题被称为Lagrange dual problem，相应的，原问题\ref{equ:6}被称为原问题(primal problem)。
+
+整个逻辑思路为：原问题\ref{equ:6}$\Rightarrow$拉格朗日函数\ref{equ:7}$\Rightarrow$对偶问题\ref{equ:8}
+
+\paragraph{原问题和对偶问题}
+对偶问题\ref{equ:8}总是一个凸问题，无论原问题是否是凸的；使用$\lambda^\star,\nu^\star$表示对偶问题的最优解，对于对偶问题的最大值$g^\star$，显然有
+$$
+g^\star\le v^\star
+$$
+
+这条性质被称为\key{弱对偶性}。对偶问题的最大值小于原问题的最小值。\textbf{对偶问题和原问题之间存在一个gap}。在如果gap等于0，则对偶问题的最优值就等于原问题的最优值。
+
+\paragraph{Slater's condition}
+满足$g^\star=v^\star$，这被称为强对偶性。强对偶性是一个比较高的条件，对于一个凸的原问题，还需要对其附加额外条件，才能使其具备强对偶性。
+
+Slater's condition\footnote{https://zhuanlan.zhihu.com/p/58064316}是一个比较容易验证的强对偶性条件。
+如果$\exists \mathrm{x}\in\mathrm{relint}\mathcal{D}$ ，使得$f_i(\mathrm{x})<0,i=1,...,m)$，那么就满足Slater's条件。这里$\mathrm{relint}\mathcal{D}=\{\mathrm{x}\in\mathcal{D}|B(\mathrm{x},r)\cap \mathrm{aff}\mathcal{D}\subseteq\mathcal{D},\ for\ some\ r>0\}$，也就是说存在一个点$\mathrm{x}$，在其周围的球$B(\mathrm{x},r)$与$\mathrm{aff}\mathcal{D}$相交的范围，是$\mathcal{D}$的子集，且这个点满足所有不等式约束。
+
+\paragraph{互补-充实条件}
+对于不等式约束$\lambda_i^\star,f_i(\mathrm{x}^\star)$，满足互补充实条件，意味着
+$$
+\lambda_i^\star f_i(\mathrm{x}^\star)=0,i=1,...,m
+$$
+也就是说，当$\lambda>0$的时候，要有$f(x)=0$；如果$f(x)<0$，就要求$\lambda=0$\key{这里需要更加详细的说明。}
+
+\section{KKT条件}
+假设函数$f_0,f_1,...,f_m,h_1,...h_p$都是可微分的。且$\mathrm{x}^\star$是原问题的最优解，$(\lambda^\star,\nu^\star)$是对偶问题的最优解，且两个问题的gap为0。
+
+由于$\mathrm{x}$可以最小化$L(\mathrm{x},\lambda^\star,\nu^\star)$，就有
+$$
+\nabla f_0(\mathrm{x}^\star)+\sum_{i=1}^m\lambda_i^\star\nabla f_i(\mathrm{x}^\star)+\sum_{j=1}^p\nu^\star_j\nabla h_j(\mathrm{x}^\star)=0
+$$
+
+这条加上上述提及的各种约束，最终得到\key{KKT系统}：
+\begin{equation}
+    \label{equ9}
+    \left\{
+        \begin{aligned}
+            &f_i(\mathrm{x}^\star)\le 0,&i=1...m\\
+            &h_j(\mathrm{x}^\star)=0,&j=1...p\\
+            &\lambda_i^\star\ge0,&i=1...m\\
+            &\lambda_i^\star f_i(\mathrm{x}^\star)=0,&i=1...m\\
+            &\nabla f_0(\mathrm{x}^\star)+\sum_{i=1}^m\lambda_i^\star\nabla f_i(\mathrm{x}^\star)+\sum_{j=1}^p\nu^\star_j\nabla h_j(\mathrm{x}^\star)=0
+        \end{aligned}
+        \right.
+\end{equation}
+
+这五个条件中，前两个是原本携带的等式不等式约束；三四是互补充实条件；五是KT条件。
+
+\key{后续的算法围绕着KKT系统出发。}
 
 \end{document}

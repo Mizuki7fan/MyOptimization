@@ -1,0 +1,440 @@
+\documentclass[a4paper]{D:/MyRepo/Script/latex/PaperReadingLog}
+\usepackage{caption}
+\usepackage{overpic}
+\usepackage{float}
+
+\usepackage{enumitem} 
+\usepackage{amsfonts,amssymb,amsmath}
+
+\usepackage{algorithm}%%算法伪代码，支持中文
+\usepackage{algorithmic}
+\setmainfont{Arial}
+
+\begin{document}
+
+\PaperInfo
+{7.凸优化算法}
+{朱}
+{天宇}
+{}
+
+如果要优化的函数是凸的，一般采用\key{下降算法}。
+
+\section{等式约束}
+
+\subsection{两条路径}
+
+\begin{equation}
+    \label{equ1}
+    \begin{aligned}
+        \min\quad &f(\mathrm{x})\\
+        s.t.\quad &\mathrm{A}\mathrm{x}=\mathrm{b}
+    \end{aligned}
+\end{equation}
+
+这里$f(\mathrm{x})$是凸的，矩阵$\mathrm{A}\in\mathbb{R}^{p\times n},\mathrm{rankA}=p<n$。
+
+其KKT系统为：
+\begin{equation}
+    \label{equ3}
+    \left\{
+        \begin{aligned}
+            \mathrm{A}\mathrm{x}^\star-\mathrm{b}=0\\
+            \nabla f(\mathrm{x}^\star)+\mathrm{A}^\top\nu^\star=0
+        \end{aligned}
+        \right.        
+\end{equation}
+
+这里$\nu$是拉格朗日乘子。由于没有不等式约束，所以KKT系统中的1/3/4式始终满足。剩余的是2/5式。上面的式子被称为原问题可行性方程，下面的式子被称为对偶问题可行性方程。这个系统关于$\nu$是线性的，关于$\mathrm{x}^\star$是非线性的，因此KKT系统是非线性的。
+
+求解这个系统，一般通过牛顿法来处理。原问题$\min f(\mathrm{x})$的牛顿法和求解KKT系统的牛顿法是差不多的。原问题的牛顿法通常是在$f(\mathrm{x})$处做2阶泰勒展开，变成二次函数，获得当前点处的牛顿方向。展开后的二次函数的导数显然是线性的；而对于KKT非线性系统的牛顿迭代，实际上是做一阶近似。对于原问题的二阶近似，会得到一个梯度和Hessian；对于KKT非线性系统的一阶近似，会得到一个Jacobian矩阵。
+
+为了确定问题\ref{equ1}的牛顿步，在$\mathrm{x}$附近作二阶泰勒展开，得到一个关于$\mathrm{s}$的式子：
+\begin{equation}
+    \label{equ2}
+    \begin{aligned}
+        \min\quad&\hat{f}(\mathrm{x}+\mathrm{s})=f(\mathrm{x})+\nabla f(\mathrm{x})^\top +\frac{1}{2}\mathrm{s}^\top \nabla^2f(\mathrm{x})\mathrm{s}\\
+        s.t.\quad&\mathrm{A}(\mathrm{x}+\mathrm{s})=\mathrm{b}
+    \end{aligned}        
+\end{equation}
+
+对于这个式子，假设最优解是$\delta_{\mathrm{x}_{nt}}$。则通过\ref{equ2}的KKT条件，就可以知道存在关联的最优对偶变量$w\in\mathbb{R}^p$，满足
+\begin{equation}
+    \label{equ5}
+    \left[
+\begin{array}[]{cc}
+    \nabla^2 f(\mathrm{x}) & \mathrm{A}^\top \\
+    \mathrm{A}^\top & 0
+\end{array}
+\right]
+\left[
+\begin{array}[]{c}
+    \delta_{\mathrm{x}_{nt}}\\
+    w
+\end{array}
+\right]
+=
+\left[
+\begin{array}[]{c}
+    -\nabla f(\mathrm{x})\\
+    0
+\end{array}
+\right]
+\end{equation}
+
+
+从而可以解出牛顿步长。
+
+而如果不对原问题\ref{equ1}进行二阶泰勒展开，而是直接处理其KKT条件，替换\ref{equ3}中的$\mathrm{x}^\star,\nu^\star$为$\mathrm{x}+\delta_{\mathrm{x}_{nt}},w$，并且将第二个式子中的梯度项替换为$\mathrm{x}$附近的线性近似，就可以获得
+\begin{equation}
+    \label{equ4}
+    \left\{
+    \begin{aligned}
+        &\mathrm{A}(\mathrm{x}+\delta_{\mathrm{x}_{nt}})-\mathrm{b}=0\\
+        &\nabla f(\mathrm{x}+\delta_{\mathrm{x}_{nt}})+\mathrm{A}^\top w\approx \nabla f(\mathrm{x})+\nabla^2 f(\mathrm{x})\delta_{\mathrm{x}_{nt}}+\mathrm{A}^\top w=0
+    \end{aligned}
+    \right.
+\end{equation}
+
+可以发现\ref{equ4}与\ref{equ5}是一模一样的：
+
+原问题\ref{equ1}$\stackrel{\text{二阶泰勒展开}}{\Rightarrow}$二次规划(QP)问题\ref{equ2}$\Rightarrow$问题\ref{equ2}的KKT\ref{equ5}$\Rightarrow$牛顿迭代步$\delta$
+
+原问题\ref{equ1}$\Rightarrow$原问题\ref{equ1}的KKT\ref{equ3}$\stackrel{\text{一阶近似}}{\Rightarrow}$\ref{equ3}的一阶近似展开$\Rightarrow$牛顿迭代步$\delta$
+
+这两条路径中，第一条路经可以用于无约束问题；
+
+\subsection{停机准则}
+定义\textbf{下降量}$\kappa$
+$$
+\kappa(\mathrm{x})=\sqrt{\delta_{\mathrm{x}_{nt}^\top} \nabla^2f(\mathrm{x})\delta_{\mathrm{x}_{nt}}}
+$$
+
+因为这个值等于
+$$
+\frac{\mathrm{d}}{\mathrm{d}\alpha} f(\mathrm{x}+\alpha\delta_{\mathrm{x}_{nt}})\left.\right|_{\alpha=0}=\nabla f(\mathrm{x})^\top \delta_{\mathrm{x}_{nt}}=-\kappa(\mathrm{x})^2
+$$
+
+如果$\kappa(\mathrm{x})$比较小，则算法停止。
+
+\subsection{算法流程(初始点可行的时候)}
+
+\begin{algorithm}[H]
+	\caption{初始点为可行点的等式约束凸问题的牛顿迭代方法} 
+	\begin{algorithmic}[1]
+		% 初始化
+		\STATE 初始点为$\mathrm{x}\in\mathrm{dom} f$，满足$\mathrm{A}\mathrm{x}=\mathrm{b}$，定义tolerance$\epsilon>0$
+        \WHILE{1}
+        \STATE \text{计算牛顿步、下降方向$\delta_{\mathrm{x}_{nt}}$和下降量}$\kappa(\mathrm{x})$
+        \IF{$\kappa^2/2\le\epsilon$}
+            \STATE \text{算法终止}
+        \ENDIF
+        \STATE \text{通过backtarcking line search以确定步长}$\alpha$
+        \STATE \text{更新：}$\mathrm{x}\leftarrow \mathrm{x}+\alpha\delta_{\mathrm{x}_{nt}}$
+        \ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
+
+值得注意的是，这个过程中，初始点必须是可行的。如果起始点不一定可行，要用外点法相关的方法。
+
+\subsection{起始点不可行的情况}
+当$\mathrm{x}$是可行点的时候，其天然满足$\mathrm{A}\mathrm{x}=\mathrm{b}$的约束。起始点是不可行点的时候，不能假定这个条件满足。
+
+这时候，就要寻找一个$\delta_{\mathrm{x}}$使得$\mathrm{A}(\mathrm{x}+\delta_{\mathrm{x}})=\mathrm{b}$。
+
+记录满足约束的点为$\mathrm{x}^\star=\mathrm{x}+\delta_\mathrm{x},\mathrm{A}\mathrm{x}^\star=\mathrm{b}$，同样将原问题\ref{equ1}的KKT系统\ref{equ3}中的$\mathrm{x}^\star$替换掉，并且进行一阶展开，就得到
+\begin{equation}
+    \label{equ6}
+    \left\{
+    \begin{aligned}
+        &\mathrm{A}(\mathrm{x}+\delta_\mathrm{x})-\mathrm{b}=0\\
+        &\nabla f(\mathrm{x}+\delta_\mathrm{x})+\mathrm{A}^\top \mu\approx \nabla f(\mathrm{x})+\nabla^2 f(\mathrm{x})\delta_\mathrm{x}+\mathrm{A}^\top \mu=0
+    \end{aligned}
+    \right.
+\end{equation}
+
+同样可以得到一个KKT系统：
+\begin{equation}
+    \label{equ7}
+    \left[
+\begin{array}[]{cc}
+    \nabla^2 f(\mathrm{x}) & \mathrm{A}^\top \\
+    \mathrm{A}^\top & 0
+\end{array}
+\right]
+\left[
+\begin{array}[]{c}
+    \delta_\mathrm{x}\\
+    \mu
+\end{array}
+\right]
+=
+\left[
+\begin{array}[]{c}
+    -\nabla f(\mathrm{x})\\
+    \mathrm{A}\mathrm{x}-\mathrm{b}
+\end{array}
+\right]
+\end{equation}
+
+注意方程组\ref{equ7}和方程组\ref{equ5}的区别：等号右边下方，\ref{equ5}是0，而\ref{equ7}是$\mathrm{A}\mathrm{x}-\mathrm{b}$。
+
+也就是说，当当前点是不可行点的时候，迭代时只需要将这一项进行修改就行了。
+
+\paragraph{解释}
+将KKT系统表达为函数$r(\mathrm{x}^\star,\nu^\star)=0,r:\mathbb{R}^n\times\mathbb{R}^p\mapsto\mathbb{R}^n\times\mathbb{R}^p$，其包含两个分部：primal和dual的。
+$$
+r(\mathrm{x}^\star,\nu^\star)=(r_{dual}(\mathrm{x}^\star,\nu^\star),r_{primal}(\mathrm{x}^\star,\nu^\star))
+$$
+
+在这里，$r_{dual},r_{pri}$分别称为对偶残差和原残差。
+$$
+\begin{aligned}
+    &r_{dual}(\mathrm{x},\nu)=\nabla f(\mathrm{x})+\mathrm{A}^\top \nu\\
+    &r_{primal}(\mathrm{x},\nu)=\mathrm{A}\mathrm{x}-\mathrm{b}
+\end{aligned}
+$$
+
+在当前点$\mathrm{y}=(\mathrm{x},\nu)$的附近，作$r$的一阶近似展开，就有
+$$
+r(y+\delta_y)\approx \hat{r}(y+\delta_y)=r(y)+\mathrm{J}[r(y)]\delta_y
+$$
+
+这里，$\mathrm{J}$是Jacobian矩阵，因为KKT条件当中已经存在一阶信息了，再次作一阶展开，就会出现Jacobian矩阵。表示在$y$点处对$r$进行求导。$\mathrm{J}[r(y)]$的维度是$(n+p)\times (n+p)$。
+
+定义$\delta_{y_{pd}}$为$\hat{r}(y+\delta_y)=0$的时候的牛顿迭代步，由于$\hat{r}=0$，可知
+$$
+\mathrm{J}[r(y)]\delta_{y_{pd}}=-r(y)
+$$
+
+注意到，$\delta_{y_{pd}}=(\delta_{x_{pd}},\delta_{y_{pd}})$，同时给出了primal和dual的步长。
+
+改写一下\ref{equ7}式：
+\begin{equation}
+    \label{equ8}
+    \left[
+\begin{array}[]{cc}
+    \nabla^2 f(\mathrm{x}) & \mathrm{A}^\top \\
+    \mathrm{A}^\top & 0
+\end{array}
+\right]
+\left[
+\begin{array}[]{c}
+    \delta_\mathrm{x_{pd}}\\
+    \delta_{\nu_{pd}}
+\end{array}
+\right]
+=-
+\left[
+\begin{array}[]{c}
+  r_{dual}\\
+  r_{pri}  
+\end{array}
+\right]
+=-
+\left[
+\begin{array}[]{c}
+    \nabla f(\mathrm{x})+\mathrm{A}^\top\nu\\
+    \mathrm{A}\mathrm{x}-\mathrm{b}
+\end{array}
+\right]
+\end{equation}
+
+这里，$\nu+\delta_{\nu_{pd}}=\mu$
+
+\subsection{算法流程(初始点不可行的时候)}
+\begin{algorithm}[H]
+	\caption{初始点为不可行点的等式约束凸问题的牛顿迭代方法} 
+	\begin{algorithmic}[1]
+		% 初始化
+		\STATE 初始点为$\mathrm{x}\in\mathrm{dom} f$，但是$\mathrm{A}\mathrm{x}\neq\mathrm{b}$，定义tolerance$\epsilon>0$，定义$\tau\in(0,1/2),\gamma\in(0,1)$
+        \WHILE{$\mathrm{A}\mathrm{x}\neq \mathrm{b} \text{或者} \lVert r(\mathrm{x},\nu)\lVert_2>\epsilon$}
+            \STATE \text{计算primal和dual的牛顿步$\delta_{\mathrm{x}_{nt}},\delta_{\nu_{nt}}$}
+            \STATE \text{在$\lVert r \lVert_2$上做backtracking line search}
+            \STATE $\alpha\leftarrow 1$
+         \WHILE{$\lVert r(\mathrm{x}+\alpha\delta_{\mathrm{x}_{nt}},\nu+\alpha\delta_{\nu_{nt}})\lVert_2>(1-\tau\alpha)\lVert r(\mathrm{x},\nu)\lVert_2$}
+             \STATE $\alpha\leftarrow\gamma\alpha$
+        \ENDWHILE
+        \STATE $\mathrm{x}\leftarrow\mathrm{x}+\alpha\delta_{\mathrm{x}_{nt}}$
+        \STATE $\nu\leftarrow\nu+\alpha\delta_{\nu_{nt}}$
+        \ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
+
+\section{不等式约束}
+含不等式约束的凸优化问题的形式为：
+\begin{equation}
+    \label{equ9}
+    \begin{aligned}
+        \min\quad &f_0(\mathrm{x})\\
+        s.t.\quad &f_i(\mathrm{x})\le0,\quad 1,...,m\\
+        &\mathrm{A}\mathrm{x}=\mathrm{b}
+    \end{aligned}
+\end{equation}
+
+其KKT系统为
+\begin{equation}
+    \label{equ10}
+    \left\{
+    \begin{aligned}
+        f_i(\mathrm{x}^\star)& \le0,i=1,...,m\\
+        \mathrm{A}\mathrm{x}^\star&=b\\
+        \lambda_i^\star&\ge0\\
+        \lambda_i^\star f_i(\mathrm{x}^\star)&=0,i=1,...,m\\
+        \nabla f_0(\mathrm{x}^\star)+\sum_{i=1}^m\lambda_i^\star \nabla f_i(\mathrm{x}^\star)+\mathrm{A}^\top\nu^\star&=0
+    \end{aligned}
+    \right.
+\end{equation}
+
+这个系统含有不等式约束，无法像之前一样处理。对于这种情况，有2种处理方法：\key{障碍函数}、\key{primal-dual 内点算法}
+
+\subsection{使用障碍函数}
+定义\key{示性函数}：
+$$
+I_-(u)=\left\{
+    \begin{aligned}
+        0,\quad u\le0\\
+        \infty,\quad u>0
+    \end{aligned}
+\right.
+$$
+
+通过示性函数，可以将原问题改写称为仅含有等式约束的问题：
+\begin{equation}
+    \label{equ11}
+    \begin{aligned}
+        \min\quad&f_0(\mathrm{x})+\sum_{i=1}^mI_-(f_i(\mathrm{x}))\\
+        s.t.\quad&\mathrm{A}\mathrm{x}=\mathrm{b}
+    \end{aligned}
+\end{equation}
+
+示性函数不可微不连续，性质不好，所以引入\key{障碍函数}来进行\textbf{逼近}。比如使用
+$$
+\hat{I}_-(u)=-(1/t)\log(-u)
+$$
+
+这张图显示了障碍函数和示性函数的关系：t越大，近似程度越高。
+\begin{figure}[H]%
+    \centering
+    \begin{overpic}[width=0.80\linewidth]{fig/7.1.png}
+    \end{overpic}
+    \vspace{-3.5mm}
+    \vspace{2mm}
+\end{figure}
+
+代入障碍函数后，方程\ref{equ11}就变为：
+\begin{equation}
+    \label{equ12}
+    \begin{aligned}
+        \min\quad&f_0(\mathrm{x})+\sum_{i=1}^m-(1/t)\log(-f_i(\mathrm{x}))\\
+        s.t.\quad&\mathrm{A}\mathrm{x}=\mathrm{b}
+    \end{aligned}
+\end{equation}
+
+这是一个等式约束的凸优化问题。
+
+这里，障碍函数被称为\key{对数障碍函数}，其表达式、一阶导、二阶导分别是：
+\begin{equation}
+    \label{equ13}
+    \begin{aligned}
+        \phi(\mathrm{x})&=-\sum_{i=1}^m\log(-f_i(\mathrm{x}))\\
+        \nabla \phi(\mathrm{x})&=\sum_{i=1}^m\frac{1}{-f_i(\mathrm{x})}\nabla f_i(\mathrm{x})\\
+        \nabla^2 \phi(\mathrm{x})&=\sum_{i=1}^m\frac{1}{f_i(\mathrm{x})^2}\nabla f_i(\mathrm{x})\nabla f_i(\mathrm{x})^\top+\sum_{i=1}^m\frac{1}{-f_i(\mathrm{x})}\nabla^2 f_i(\mathrm{x})
+    \end{aligned}
+\end{equation}
+
+方程\ref{equ12}可以通过牛顿法来求解。可以将目标函数乘以$t$，则变为
+\begin{equation}
+    \label{equ14}
+    \begin{aligned}
+        \min\quad&tf_0(\mathrm{x})+\phi(\mathrm{x})\\
+        s.t.\quad&\mathrm{A}\mathrm{x}=\mathrm{b}
+    \end{aligned}
+\end{equation}
+
+\paragraph{中心路经central path}
+对于每一个$t$，都能对应到一个比较好的$\mathrm{x}$，因此，定义$\mathrm{x}^\star(t)=\arg\min_\mathrm{x}\{tf_0(\mathrm{x})+\phi(\mathrm{x})\ s.t.\ \mathrm{A}\mathrm{x}=\mathrm{b}\}$。实际算法中需要仔细调节$t$的数值。
+
+$\mathrm{x}^\star(t)$和原问题\ref{equ9}不是一回事，是问题\ref{equ14}的最优解。问题\ref{equ9}的\key{中心路径}，被定义为由$\mathrm{x}^\star(t)$构成的，按照t的值进行排序的有序点集合$\{\mathrm{x}^\star(t)|t>0\}$。另外值得注意的是，当$t\rightarrow\infty$的时候，障碍项趋向于不起作用。
+
+在中心路径上的点，始终保证$\mathrm{x}^\star(t)$是可行点。也就是其满足约束
+$$
+\mathrm{A}\mathrm{x}^\star(t)=\mathrm{b},\quad f_i(\mathrm{x}^\star(t))<0,\quad i=1,...,m
+$$
+
+并且$\exists\hat{\nu}\in\mathbb{R}^p$，满足问题\ref{equ14}的\textbf{最优性条件}：
+\begin{equation}
+    \label{equ15}
+    \begin{aligned}
+        0&=t\nabla f_0(\mathrm{x}^\star(t))+\nabla\phi(\mathrm{x}^\star(t))+\mathrm{A}^\top\hat{\nu}\\
+        &=t\nabla f_0(\mathrm{x}^\star(t))+\sum_{i=1}^m\frac{1}{-f_i(\mathrm{x}^\star(t))}\nabla f_i(\mathrm{x}^\star(t))+\mathrm{A}^\top\hat{\nu}
+    \end{aligned}        
+\end{equation}
+
+定义$\lambda^\star(t)=-\frac{1}{tf_i(\mathrm{x}^\star(t))}>0,\nu^\star(t)=\frac{\hat{\nu}}{t}$，将之带入式子\ref{equ15}中，可以得到
+\begin{equation}
+    \label{equ16}
+    \nabla f_0(\mathrm{x}^\star(t))+\sum_{i=1}^m\lambda_i^\star(t)\nabla f_i(\mathrm{x}^\star(t))+\mathrm{A}^\top\nu^\star(t)=0
+\end{equation}
+
+可以发现这个式子和原问题\ref{equ9}的KKT条件\ref{equ10}的最后一项是一样的。区别仅仅在于有无(t)。而这个式子\ref{equ16}是原问题的\ref{equ9}的拉格朗日函数
+$$
+L(\mathrm{x},\lambda,\nu)=f_0(\mathrm{x})+\sum_{i=1}^m\lambda_if_i(\mathrm{x})+\nu^\top(\mathrm{A}\mathrm{x}-\mathrm{b})
+$$
+的导数。因此，$(\lambda^\star(t),\nu^\star(t))$是一对可行的对偶乘子。
+
+所以可以讨论原问题\ref{equ14}的\textbf{对偶函数}
+$$
+\begin{aligned}
+    g(\lambda^\star(t),\nu^\star(t))&=\min_\mathrm{x}L(\mathrm{x},\lambda^\star(t),\nu^\star(t))\\
+    &=f_0(\mathrm{x}^\star(t))+\sum_{i=1}^m\lambda^\star_i(t)f_i(\mathrm{x}^\star(t))+\nu^\star(t)^\top(\mathrm{A}\mathrm{x}^\star(t)-\mathrm{b})\\
+    &=f_0(\mathrm{x}^\star(t))-m/t
+\end{aligned}
+$$
+
+关于最后一行的化简。回顾定义$\lambda^\star(t)=-\frac{1}{tf_i(\mathrm{x}^\star(t))}$以及$\mathrm{A}\mathrm{x}^\star(t)-\mathrm{b}=0$。
+
+发现原问题和对偶问题之间存在一个值为$m/t$的gap。因此，$f_0(\mathrm{x}^\star(t))-v^\star\le m/t$。这样可以说明$t\rightarrow\infty$的时候，$\mathrm{x}^\star(t)\rightarrow\mathrm{x}^\star$。
+
+\paragraph{从KKT出发的理解}
+假设$\mathrm{x}$是问题\ref{equ14}的唯一解。那么就必然$\exists \lambda,\nu$使得：
+\begin{equation}
+    \label{equ17}
+    \left\{
+    \begin{aligned}
+        f_i(\mathrm{x})& \le0,i=1,...,m\\
+        \mathrm{A}\mathrm{x}&=b\\
+        \lambda_i&\ge0\\
+        -\lambda_i f_i(\mathrm{x})&=1/t,i=1,...,m\\
+        \nabla f_0(\mathrm{x})+\sum_{i=1}^m\lambda_i \nabla f_i(\mathrm{x})+\mathrm{A}^\top\nu&=0
+    \end{aligned}
+    \right.
+\end{equation}
+
+和\ref{equ10}的KKT系统唯一的区别就是互补充实条件$\lambda_if_i(\mathrm{x})$等号右边的值从0变成了$1/t$，对于一个较大的$t$，$\mathrm{x}^\star(t),\lambda^\star(t),\nu^\star(t)$接近于KKT条件中的最优值。
+
+
+\subsubsection{障碍函数法算法流程}
+\begin{algorithm}
+	\caption{障碍函数法} 
+	\begin{algorithmic}[1]
+		% 初始化
+		\STATE 选择可行点$\mathrm{x},t\leftarrow t_0>0,\gamma>1,\epsilon>0$
+        \WHILE{1}
+        \STATE 通过对方程\ref{equ14}求最小化，获取$\mathrm{x}^\star(t)$
+        \STATE $\mathrm{x}\leftarrow\mathrm{x}^\star(t)$
+        \IF{$m/t<\epsilon$}
+            \STATE \text{算法终止}
+        \ENDIF
+        \STATE 增加$t$的值：$t\leftarrow \gamma t$
+        \ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
+
+获取$\mathrm{x}^\star(t)$的步骤被称为\key{外部迭代}，$\mathrm{x}^\star(t)$无需精确的计算；选择$\gamma$是一个trade-off：外部迭代和内部迭代的次数。$t_0$的选择也是一个trade-off：如果$t_0$过大，那么首次外部迭代需要多轮；$t_0$过小，则算法需要额外的外部迭代；
+
+\subsection{直接修改KKT系统}
+
+
+
+\end{document}
